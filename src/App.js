@@ -20,6 +20,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home');
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
+  const [myRides, setMyRides] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -101,11 +102,30 @@ function AppContent() {
     }
   };
 
+  // Fetch user's own rides
+  const fetchMyRides = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      const data = await apiCall('/api/my-rides');
+      setMyRides(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching my rides:', err);
+      setError('Failed to load your rides: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load rides when user is logged in and view changes
   useEffect(() => {
     console.log('Effect triggered - User:', !!currentUser, 'View:', currentView);
     if (currentUser && (currentView === 'browse' || currentView === 'home')) {
       fetchRides();
+    }
+    if (currentUser && currentView === 'myrides') {
+      fetchMyRides();
     }
   }, [currentUser, currentView]);
 
@@ -231,7 +251,8 @@ function AppContent() {
 
   const getWhatsAppLink = (phone, ride) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `Hi! I'm interested in your BITSPool ride from ${ride.origin} to ${ride.destination} on ${new Date(ride.date).toLocaleDateString()}`;
+    const rideDate = new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date);
+    const message = `Hi! I'm interested in your BITSPool ride from ${ride.origin} to ${ride.destination} on ${rideDate.toLocaleDateString()}`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
@@ -258,7 +279,7 @@ function AppContent() {
           </div>
           <div className="detail-row">
             <span className="detail-label">Date</span>
-            <span className="detail-value">{new Date(ride.date).toLocaleDateString()}</span>
+            <span className="detail-value">{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toLocaleDateString()}</span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Time</span>
@@ -327,13 +348,14 @@ function AppContent() {
   const Navbar = () => (
     <nav className="navbar">
       <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
-        <div className="logo-icon">♦</div> BitsPool
+        <div className="logo-icon">♦</div> BITSPool
       </div>
       <div className="nav-links">
         {currentUser && (
           <>
             <span className="nav-item" onClick={() => setCurrentView('home')}>Home</span>
             <span className="nav-item" onClick={() => setCurrentView('browse')}>Browse Rides</span>
+            <span className="nav-item" onClick={() => setCurrentView('myrides')}>My Rides</span>
             <span className="nav-item" onClick={() => setCurrentView('post')}>Post a Ride</span>
           </>
         )}
@@ -435,7 +457,7 @@ function AppContent() {
                       <div className="card-content">
                         <div className="card-route">{ride.origin} → {ride.destination}</div>
                         <div className="card-details">
-                          <span>{new Date(ride.date).toDateString()}, {ride.time}</span>
+                          <span>{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toDateString()}, {ride.time}</span>
                         </div>
                         <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} seats</div>
                       </div>
@@ -631,8 +653,62 @@ function AppContent() {
         </>
       )}
 
+      {/* --- MY RIDES VIEW --- */}
+      {currentView === 'myrides' && (
+        <div style={{marginTop: '2rem'}}>
+          <h2 style={{textAlign: 'center', marginBottom: '2rem'}}>My Rides ({myRides.length})</h2>
+
+          {loading ? (
+            <p style={{textAlign: 'center', padding: '2rem'}}>Loading your rides...</p>
+          ) : myRides.length === 0 ? (
+            <div style={{textAlign: 'center', padding: '4rem'}}>
+              <p>You haven't posted any rides yet.</p>
+              <button className="btn-primary" onClick={() => setCurrentView('post')} style={{marginTop: '1rem'}}>
+                Post Your First Ride
+              </button>
+            </div>
+          ) : (
+            <div className="rides-grid">
+              {myRides.map((ride, index) => (
+                <div key={ride.id || ride._id || index} className="ride-card" onClick={() => setSelectedRide(ride)}>
+                  <div 
+                    className="card-image" 
+                    style={{
+                      backgroundColor: '#ddd',
+                      backgroundImage: `url('${getRideImage(ride.id || ride._id, index)}')`
+                    }}
+                  ></div>
+                  <div className="card-content">
+                    <div className="card-route">{ride.origin} → {ride.destination}</div>
+                    <div className="card-details">
+                      <span>{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toDateString()}, {ride.time}</span>
+                    </div>
+                    <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} / {ride.seatsTotal} seats</div>
+                    <div style={{marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#e8f5e9', borderRadius: '4px', fontSize: '0.85rem'}}>
+                      <strong>Your Ride</strong>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* --- MODAL --- */}
       {selectedRide && <RideModal ride={selectedRide} onClose={() => setSelectedRide(null)} />}
+      
+      {/* --- FOOTER --- */}
+      <footer style={{
+        textAlign: 'center',
+        padding: '2rem',
+        marginTop: '3rem',
+        borderTop: '1px solid #e0e0e0',
+        color: '#666',
+        fontSize: '0.9rem'
+      }}>
+        Made with ❤️ by Kurkure and Pulkit
+      </footer>
     </div>
   );
 }
