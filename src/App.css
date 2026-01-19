@@ -1,38 +1,345 @@
-.App {
+/* App.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-red: #DC2626;
+  --primary-hover: #B91C1C;
+  --text-main: #111827;
+  --text-secondary: #6B7280;
+  --bg-light: #F9FAFB;
+  --border-color: #E5E7EB;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #fff;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Navigation --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.logo-icon {
+  background: black;
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-item {
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  color: var(--primary-red);
+}
+
+.btn-login {
+  background-color: var(--bg-light);
+  color: var(--text-main);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: var(--primary-red);
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+/* --- Hero Section --- */
+.hero {
   text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  padding: 4rem 1rem;
+  /* Background image is now handled inline in App.js */
+  color: white;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  border-radius: 0 0 16px 16px;
+  margin-bottom: 2rem;
 }
 
-.App-link {
-  color: #61dafb;
+.hero h1 {
+  font-size: 2.5rem;
+  max-width: 700px;
+  margin-bottom: 2rem;
+  line-height: 1.2;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-hero-white {
+  background: white;
+  color: var(--text-main);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- Filters --- */
+.filters-container {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  padding: 0 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  background: var(--bg-light);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Card Grid --- */
+.section-title {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  padding: 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.rides-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 4rem;
+  padding: 0 1.5rem;
+}
+
+.ride-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid transparent;
+}
+
+.ride-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-color);
+}
+
+.card-image {
+  height: 180px;
+  background-color: #ddd;
+  background-size: cover;
+  background-position: center;
+}
+
+.card-content {
+  padding: 1rem;
+}
+
+.card-route {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-details {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-seats {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--primary-red);
+  font-weight: 500;
+}
+
+/* --- Form Container --- */
+.form-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.btn-block {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.modal-header {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+/* Utilities */
+.text-pilani { color: #888; font-size: 0.8rem; margin-top: 4px;}
+.error-msg { color: var(--primary-red); font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1rem;
+    }
+    .nav-links {
+        gap: 1rem;
+    }
+    .nav-item {
+        font-size: 0.9rem;
+    }
+    .hero {
+        min-height: 400px;
+    }
+    .hero h1 {
+        font-size: 1.75rem;
+    }
 }
