@@ -229,7 +229,7 @@ function AppContent() {
     try {
       setLoading(true);
       
-      await apiCall(`/api/rides/${ride.id}/request`, {
+      const response = await apiCall(`/api/rides/${ride.id}/request`, {
         method: 'POST',
         body: JSON.stringify({
           passengerName: currentUser.displayName || 'BITS Student',
@@ -238,9 +238,23 @@ function AppContent() {
         })
       });
       
-      alert('✅ Request sent! The host will receive an email.');
       setSelectedRide(null);
       fetchRides();
+      
+      // Show success message with WhatsApp option
+      if (response.hostWhatsAppLink) {
+        const notifyHost = window.confirm(
+          '✅ Request sent!\n\n' +
+          'Click OK to notify the host on WhatsApp with approve/reject links.\n' +
+          'Click Cancel to skip (host will still receive an email).'
+        );
+        
+        if (notifyHost) {
+          window.open(response.hostWhatsAppLink, '_blank');
+        }
+      } else {
+        alert('✅ Request sent! The host will receive an email.');
+      }
       
     } catch (err) {
       alert('Error: ' + err.message);
