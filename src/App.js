@@ -97,6 +97,8 @@ function AppContent() {
       setLoading(true);
       setError('');
       console.log('Fetching rides...');
+      console.log('API URL:', API_URL);
+      console.log('User:', currentUser?.email);
       
       const data = await apiCall('/api/rides');
       console.log('Rides received:', data);
@@ -105,7 +107,8 @@ function AppContent() {
       setRides(validRides.reverse());
     } catch (err) {
       console.error("Error fetching rides:", err);
-      setError('Failed to load rides: ' + err.message);
+      const errorMsg = err.message || 'Unknown error occurred';
+      setError(`Failed to load rides: ${errorMsg}. Please check your internet connection.`);
     } finally {
       setLoading(false);
     }
@@ -489,14 +492,29 @@ function AppContent() {
 
       {/* Error Display */}
       {(authError || error) && (
-        <div style={{
-          backgroundColor: '#fee',
-          color: '#c00',
-          padding: '1rem',
-          textAlign: 'center',
-          margin: '1rem'
-        }}>
-          {authError || error}
+        <div className="error-banner">
+          <div style={{marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: '600'}}>
+            ⚠️ Error
+          </div>
+          <div style={{marginBottom: '1rem'}}>
+            {authError || error}
+          </div>
+          {error && (
+            <button 
+              className="btn-primary" 
+              onClick={() => {
+                setError('');
+                if (currentView === 'browse' || currentView === 'home') {
+                  fetchRides();
+                } else if (currentView === 'myrides') {
+                  fetchMyRides();
+                }
+              }}
+              style={{fontSize: '0.9rem', padding: '0.5rem 1rem'}}
+            >
+              Try Again
+            </button>
+          )}
         </div>
       )}
 
@@ -532,7 +550,19 @@ function AppContent() {
               <h2 className="section-title">Recent Rides ({rides.length})</h2>
               
               {loading ? (
-                <p style={{textAlign: 'center', padding: '2rem'}}>Loading rides...</p>
+                <div style={{textAlign: 'center', padding: '2rem'}}>
+                  <div className="loading-spinner">⏳</div>
+                  <p>Loading rides...</p>
+                </div>
+              ) : error && rides.length === 0 ? (
+                <div style={{textAlign: 'center', padding: '2rem'}}>
+                  <p style={{fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '1rem'}}>
+                    Could not load rides. Please try again.
+                  </p>
+                  <button className="btn-primary" onClick={fetchRides}>
+                    Retry
+                  </button>
+                </div>
               ) : rides.length === 0 ? (
                 <div style={{textAlign: 'center', padding: '2rem'}}>
                   <p>No rides available yet. Be the first to post!</p>
@@ -585,7 +615,19 @@ function AppContent() {
               </button>
             </div>
           ) : loading ? (
-            <p style={{textAlign: 'center', padding: '2rem'}}>Loading rides...</p>
+            <div style={{textAlign: 'center', padding: '2rem'}}>
+              <div className="loading-spinner">⏳</div>
+              <p>Loading rides...</p>
+            </div>
+          ) : error && rides.length === 0 ? (
+            <div style={{textAlign: 'center', padding: '4rem'}}>
+              <p style={{fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '1rem'}}>
+                Could not load rides. Please try again.
+              </p>
+              <button className="btn-primary" onClick={fetchRides}>
+                Retry
+              </button>
+            </div>
           ) : rides.length === 0 ? (
             <div style={{textAlign: 'center', padding: '4rem'}}>
               <p>No rides available</p>
