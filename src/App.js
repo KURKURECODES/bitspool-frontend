@@ -188,7 +188,6 @@ function AppContent() {
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
-  }, [currentUser, currentView]);
 
   const handleLogin = async () => {
     try {
