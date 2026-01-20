@@ -2,7 +2,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -15,6 +17,11 @@ provider.setCustomParameters({
 });
 
 const AuthContext = createContext();
+
+// Detect mobile device
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -45,15 +52,22 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = async () => {
     try {
       setError(null);
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
       
-      if (!verifyBitsEmail(user.email)) {
-        await signOut(auth);
-        throw new Error('Please use your BITS email to sign in');
+      // Use redirect for mobile, popup for desktop
+      if (isMobile()) {
+        await signInWithRedirect(auth, provider);
+        return null; // Redirect will handle the rest
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        if (!verifyBitsEmail(user.email)) {
+          await signOut(auth);
+          throw new Error('Please use your BITS email to sign in');
+        }
+        
+        return user;
       }
-      
-      return user;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -77,6 +91,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Handle redirect result for mobile login
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const user = result.user;
+          if (!verifyBitsEmail(user.email)) {
+            await signOut(auth);
+            setError('Please use your BITS email to sign in');
+          }
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    
+    handleRedirectResult();
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         if (!verifyBitsEmail(user.email)) {
