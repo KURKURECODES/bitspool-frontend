@@ -416,8 +416,8 @@ body {
 .browse-title {
   text-align: center;
   margin-bottom: 2rem;
-  color: #FFFFFF;
-  background: #3B82F6;
+  color: #FFFFFF !important;
+  background: #3B82F6 !important;
   padding: 1rem;
   border-radius: 8px;
   max-width: 600px;
