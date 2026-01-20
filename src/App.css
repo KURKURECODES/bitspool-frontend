@@ -87,13 +87,13 @@ body {
 .logo-icon {
   background: black;
   color: white;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 18px;
 }
 
 [data-theme="dark"] .logo-icon {
@@ -289,11 +289,25 @@ body {
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
   color: var(--text-main);
+  background: var(--bg-light);
+  transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-red);
+  background: var(--bg-white);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .form-textarea {
@@ -369,6 +383,68 @@ body {
 /* Utilities */
 .text-pilani { color: #888; font-size: 0.8rem; margin-top: 4px;}
 .error-msg { color: var(--primary-red); font-size: 0.9rem; margin-bottom: 1rem; }
+
+.browse-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--text-main);
+}
+
+/* Your Ride Badges */
+.your-ride-badge {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.your-ride-modal-badge {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+[data-theme="dark"] .your-ride-badge,
+[data-theme="dark"] .your-ride-modal-badge {
+  background: linear-gradient(135deg, #66BB6A, #81C784);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+}
+
+/* Phone Modal Styling */
+.phone-modal {
+  max-width: 450px;
+}
+
+.phone-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.phone-modal .form-input {
+  background: var(--bg-light);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+.phone-modal .form-input:focus {
+  outline: none;
+  border-color: var(--primary-red);
+  background: var(--bg-white);
+}
+
+.phone-modal .btn-block:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Mobile Menu */
 .mobile-menu-toggle {

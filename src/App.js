@@ -28,6 +28,9 @@ function AppContent() {
     return saved === 'true';
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+  const [tempPhoneNumber, setTempPhoneNumber] = useState('');
+  const [phoneModalCallback, setPhoneModalCallback] = useState(null);
   
   const [formData, setFormData] = useState({
     hostName: '',
@@ -116,12 +119,14 @@ function AppContent() {
       const data = await apiCall('/api/user/profile');
       setUserProfile(data);
       
-      // If no phone number, prompt for it
+      // If no phone number, show modal for it
       if (!data.phoneNumber) {
-        const phone = prompt('Please enter your phone number for ride requests:');
-        if (phone) {
-          await savePhoneNumber(phone);
-        }
+        setPhoneModalOpen(true);
+        setPhoneModalCallback(() => async (phone) => {
+          if (phone) {
+            await savePhoneNumber(phone);
+          }
+        });
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
@@ -213,6 +218,27 @@ function AppContent() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handlePhoneSubmit = async () => {
+    if (!tempPhoneNumber.trim()) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+    
+    if (phoneModalCallback) {
+      await phoneModalCallback(tempPhoneNumber);
+    }
+    
+    setPhoneModalOpen(false);
+    setTempPhoneNumber('');
+    setPhoneModalCallback(null);
+  };
+
+  const handlePhoneModalClose = () => {
+    setPhoneModalOpen(false);
+    setTempPhoneNumber('');
+    setPhoneModalCallback(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -286,13 +312,22 @@ function AppContent() {
     // Use stored phone number or ask for it
     let passengerPhone = userProfile.phoneNumber;
     if (!passengerPhone) {
-      passengerPhone = prompt('Enter your phone number (for WhatsApp):');
-      if (!passengerPhone) return;
-      
-      // Save for future use
-      await savePhoneNumber(passengerPhone);
+      // Show phone modal
+      setPhoneModalOpen(true);
+      setPhoneModalCallback(() => async (phone) => {
+        if (phone) {
+          await savePhoneNumber(phone);
+          // Continue with request after saving phone
+          continueRequestRide(ride, phone);
+        }
+      });
+      return;
     }
 
+    continueRequestRide(ride, passengerPhone);
+  };
+
+  const continueRequestRide = async (ride, passengerPhone) => {
     try {
       setLoading(true);
       
@@ -401,13 +436,7 @@ function AppContent() {
           )}
           
           {isOwnRide && (
-            <div style={{
-              marginTop: '1rem', 
-              padding: '1rem', 
-              backgroundColor: '#e8f5e9', 
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
+            <div className="your-ride-modal-badge">
               <strong>This is your ride</strong>
             </div>
           )}
@@ -424,7 +453,7 @@ function AppContent() {
           {darkMode ? '☀️' : '🌙'}
         </button>
         <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
-          <div className="logo-icon">♦</div> BITSPool
+          <div className="logo-icon">🚗</div> BITSPool
         </div>
       </div>
       
@@ -476,9 +505,9 @@ function AppContent() {
               backgroundPosition: 'center'
             }}
           >
-            <h1>Find or Offer a Ride from Pilani</h1>
+            <h1>Share Rides with Fellow BITSians</h1>
             <p style={{color: 'white', fontSize: '1.2rem', marginBottom: '2rem'}}>
-              {currentUser ? `Welcome, ${currentUser.displayName || currentUser.email.split('@')[0]}!` : 'Sign in with your BITS email'}
+              {currentUser ? `Welcome, ${currentUser.displayName || currentUser.email.split('@')[0]}!` : 'Connect, carpool, and travel together'}
             </p>
             <div className="hero-buttons">
               {currentUser ? (
@@ -540,7 +569,7 @@ function AppContent() {
       {/* --- BROWSE VIEW --- */}
       {currentView === 'browse' && (
         <div style={{marginTop: '2rem'}}>
-          <h2 style={{textAlign: 'center', marginBottom: '2rem'}}>All Available Rides ({rides.length})</h2>
+          <h2 className="browse-title">All Available Rides ({rides.length})</h2>
 
           {!currentUser ? (
             <div style={{textAlign: 'center', padding: '4rem'}}>
@@ -756,7 +785,7 @@ function AppContent() {
                       <span>{ride.date?.toDate ? ride.date.toDate().toDateString() : new Date(ride.date).toDateString()}, {ride.time}</span>
                     </div>
                     <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} / {ride.seatsTotal} seats</div>
-                    <div style={{marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#e8f5e9', borderRadius: '4px', fontSize: '0.85rem'}}>
+                    <div className="your-ride-badge">
                       <strong>Your Ride</strong>
                     </div>
                   </div>
@@ -769,6 +798,41 @@ function AppContent() {
 
       {/* --- MODAL --- */}
       {selectedRide && <RideModal ride={selectedRide} onClose={() => setSelectedRide(null)} />}
+      
+      {/* --- PHONE NUMBER MODAL --- */}
+      {phoneModalOpen && (
+        <div className="modal-overlay" onClick={handlePhoneModalClose}>
+          <div className="modal-content phone-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={handlePhoneModalClose}>
+              <FaTimes />
+            </button>
+            <div className="modal-header">📱 Enter Your Phone Number</div>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+              We need your phone number to connect you with ride hosts via WhatsApp
+            </p>
+            <div className="form-group">
+              <label htmlFor="phone-input">WhatsApp Number</label>
+              <input
+                id="phone-input"
+                type="tel"
+                className="form-input"
+                placeholder="+91 98765 43210"
+                value={tempPhoneNumber}
+                onChange={(e) => setTempPhoneNumber(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handlePhoneSubmit()}
+                autoFocus
+              />
+            </div>
+            <button 
+              className="btn-primary btn-block" 
+              onClick={handlePhoneSubmit}
+              disabled={!tempPhoneNumber.trim()}
+            >
+              Save & Continue
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* --- FOOTER --- */}
       <footer style={{
