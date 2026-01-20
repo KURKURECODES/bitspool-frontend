@@ -267,6 +267,37 @@ body {
   font-weight: 500;
 }
 
+.card-passengers {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.passengers-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.passengers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.passenger-chip {
+  background: var(--bg-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
 /* --- Form Container --- */
 .form-container {
   max-width: 600px;

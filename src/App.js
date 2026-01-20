@@ -448,6 +448,22 @@ function AppContent() {
             <span className="detail-value">{ride.seatsAvailable || ride.seatsTotal} / {ride.seatsTotal}</span>
           </div>
 
+          {ride.passengers && ride.passengers.length > 0 && (
+            <div className="passengers-section">
+              <div className="detail-label" style={{marginBottom: '8px'}}>
+                <FaUserFriends style={{marginRight: '6px'}} />
+                Co-passengers ({ride.passengers.length})
+              </div>
+              <div className="passengers-list">
+                {ride.passengers.map((passenger, idx) => (
+                  <div key={idx} className="passenger-chip">
+                    {passenger.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!isOwnRide && (
             <div style={{marginTop: '1rem'}}>
               <button 
@@ -612,6 +628,12 @@ function AppContent() {
                           </span>
                         </div>
                         <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} seats</div>
+                        {ride.passengers && ride.passengers.length > 0 && (
+                          <div className="card-passengers">
+                            <FaUserFriends style={{marginRight: '4px'}} />
+                            {ride.passengers.map(p => p.name.split(' ')[0]).join(', ')}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -677,6 +699,12 @@ function AppContent() {
                       </span>
                     </div>
                     <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} seats</div>
+                    {ride.passengers && ride.passengers.length > 0 && (
+                      <div className="card-passengers">
+                        <FaUserFriends style={{marginRight: '4px'}} />
+                        {ride.passengers.map(p => p.name.split(' ')[0]).join(', ')}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -853,6 +881,12 @@ function AppContent() {
                       <span>{ride.date?.toDate ? ride.date.toDate().toDateString() : new Date(ride.date).toDateString()}, {ride.time}</span>
                     </div>
                     <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} / {ride.seatsTotal} seats</div>
+                    {ride.passengers && ride.passengers.length > 0 && (
+                      <div className="card-passengers">
+                        <FaUserFriends style={{marginRight: '4px'}} />
+                        {ride.passengers.map(p => p.name.split(' ')[0]).join(', ')}
+                      </div>
+                    )}
                     <div className="your-ride-badge">
                       <strong>Your Ride</strong>
                     </div>
