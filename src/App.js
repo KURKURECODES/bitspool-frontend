@@ -368,8 +368,28 @@ function AppContent() {
     }
   };
 
+  // Format phone number for WhatsApp (ensure +91 country code for India)
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return '';
+    // Remove all non-digit characters
+    let cleanPhone = phone.replace(/\D/g, '');
+    // If number starts with 0, remove it
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    // If number is 10 digits (Indian number without country code), add 91
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    // If number doesn't start with 91 and is less than 12 digits, add 91
+    if (!cleanPhone.startsWith('91') && cleanPhone.length < 12) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    return cleanPhone;
+  };
+
   const getWhatsAppLink = (phone, ride) => {
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = formatPhoneForWhatsApp(phone);
     const rideDate = new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date);
     const message = `Hi! I'm interested in your BITSPool ride from ${ride.origin} to ${ride.destination} on ${rideDate.toLocaleDateString()}`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
