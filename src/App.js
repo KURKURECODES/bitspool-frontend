@@ -293,7 +293,12 @@ function AppContent() {
           </div>
           <div className="detail-row">
             <span className="detail-label">Date</span>
-            <span className="detail-value">{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toLocaleDateString()}</span>
+            <span className="detail-value">
+              {ride.date?.toDate 
+                ? ride.date.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : new Date(ride.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              }
+            </span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Time</span>
@@ -397,26 +402,6 @@ function AppContent() {
         </div>
       )}
 
-      {/* Debug Info - Remove this later */}
-      {currentUser && (
-        <div style={{
-          position: 'fixed',
-          bottom: '10px',
-          right: '10px',
-          background: '#333',
-          color: '#fff',
-          padding: '10px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          zIndex: 9999
-        }}>
-          User: {currentUser.email}<br/>
-          View: {currentView}<br/>
-          Rides: {rides.length}<br/>
-          Loading: {loading ? 'Yes' : 'No'}
-        </div>
-      )}
-
       {/* --- HOME VIEW --- */}
       {currentView === 'home' && (
         <>
@@ -471,7 +456,12 @@ function AppContent() {
                       <div className="card-content">
                         <div className="card-route">{ride.origin} → {ride.destination}</div>
                         <div className="card-details">
-                          <span>{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toDateString()}, {ride.time}</span>
+                          <span>
+                            {ride.date?.toDate 
+                              ? ride.date.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                              : new Date(ride.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            }, {ride.time}
+                          </span>
                         </div>
                         <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} seats</div>
                       </div>
@@ -519,7 +509,12 @@ function AppContent() {
                   <div className="card-content">
                     <div className="card-route">{ride.origin} → {ride.destination}</div>
                     <div className="card-details">
-                      <span>{new Date(ride.date).toDateString()}, {ride.time}</span>
+                      <span>
+                        {ride.date?.toDate 
+                          ? ride.date.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : new Date(ride.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        }, {ride.time}
+                      </span>
                     </div>
                     <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} seats</div>
                   </div>
@@ -695,7 +690,7 @@ function AppContent() {
                   <div className="card-content">
                     <div className="card-route">{ride.origin} → {ride.destination}</div>
                     <div className="card-details">
-                      <span>{new Date(ride.date.seconds ? ride.date.seconds * 1000 : ride.date).toDateString()}, {ride.time}</span>
+                      <span>{ride.date?.toDate ? ride.date.toDate().toDateString() : new Date(ride.date).toDateString()}, {ride.time}</span>
                     </div>
                     <div className="card-seats">{ride.seatsAvailable || ride.seatsTotal} / {ride.seatsTotal} seats</div>
                     <div style={{marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#e8f5e9', borderRadius: '4px', fontSize: '0.85rem'}}>
