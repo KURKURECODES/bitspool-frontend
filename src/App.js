@@ -453,7 +453,7 @@ function AppContent() {
           {darkMode ? '☀️' : '🌙'}
         </button>
         <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
-          <div className="logo-icon">🚗</div> BITSPool
+          <div className="logo-icon">♦</div> BITSPool
         </div>
       </div>
       
