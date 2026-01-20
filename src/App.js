@@ -22,6 +22,7 @@ function AppContent() {
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState({ phoneNumber: null });
   
   const [formData, setFormData] = useState({
     hostName: '',
@@ -102,6 +103,39 @@ function AppContent() {
     }
   };
 
+  // Fetch user profile (phone number)
+  const fetchUserProfile = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const data = await apiCall('/api/user/profile');
+      setUserProfile(data);
+      
+      // If no phone number, prompt for it
+      if (!data.phoneNumber) {
+        const phone = prompt('Please enter your phone number for ride requests:');
+        if (phone) {
+          await savePhoneNumber(phone);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  };
+
+  // Save phone number
+  const savePhoneNumber = async (phoneNumber) => {
+    try {
+      await apiCall('/api/user/profile', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber })
+      });
+      setUserProfile({ ...userProfile, phoneNumber });
+    } catch (err) {
+      alert('Failed to save phone number: ' + err.message);
+    }
+  };
+
   // Fetch user's own rides
   const fetchMyRides = async () => {
     if (!currentUser) return;
@@ -118,15 +152,27 @@ function AppContent() {
     }
   };
 
-  // Load rides when user is logged in and view changes
+  // Load user profile and rides when user is logged in
   useEffect(() => {
     console.log('Effect triggered - User:', !!currentUser, 'View:', currentView);
-    if (currentUser && (currentView === 'browse' || currentView === 'home')) {
-      fetchRides();
+    if (currentUser) {
+      fetchUserProfile();
+      
+      if (currentView === 'browse' || currentView === 'home') {
+        fetchRides();
+      }
+      if (currentView === 'myrides') {
+        fetchMyRides();
+      }
+      
+      // Auto-fill name and phone in form
+      setFormData(prev => ({
+        ...prev,
+        hostName: currentUser.displayName || prev.hostName,
+        contactNumber: userProfile.phoneNumber || prev.contactNumber
+      }));
     }
-    if (currentUser && currentView === 'myrides') {
-      fetchMyRides();
-    }
+  }, [currentUser, currentView, userProfile.phoneNumber]);
   }, [currentUser, currentView]);
 
   const handleLogin = async () => {
@@ -223,8 +269,15 @@ function AppContent() {
       return;
     }
 
-    const passengerPhone = prompt('Enter your phone number (for WhatsApp):');
-    if (!passengerPhone) return;
+    // Use stored phone number or ask for it
+    let passengerPhone = userProfile.phoneNumber;
+    if (!passengerPhone) {
+      passengerPhone = prompt('Enter your phone number (for WhatsApp):');
+      if (!passengerPhone) return;
+      
+      // Save for future use
+      await savePhoneNumber(passengerPhone);
+    }
 
     try {
       setLoading(true);
@@ -318,32 +371,18 @@ function AppContent() {
           </div>
 
           {!isOwnRide && (
-            <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
+            <div style={{marginTop: '1rem'}}>
               <button 
                 className="btn-primary" 
-                style={{flex: 1}}
+                style={{width: '100%'}}
                 onClick={() => handleRequestRide(ride)}
                 disabled={loading}
               >
-                {loading ? 'Sending...' : 'Request to Join'}
+                {loading ? 'Sending...' : 'Request to Join (via WhatsApp)'}
               </button>
-              <a 
-                href={getWhatsAppLink(ride.contactNumber, ride)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-                style={{
-                  flex: 1, 
-                  textAlign: 'center', 
-                  textDecoration: 'none', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  backgroundColor: '#25D366'
-                }}
-              >
-                📱 WhatsApp
-              </a>
+              <p style={{fontSize: '0.85rem', color: '#666', marginTop: '0.5rem', textAlign: 'center'}}>
+                Click to send request with approve/reject links to host
+              </p>
             </div>
           )}
           
