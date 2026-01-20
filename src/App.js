@@ -406,6 +406,12 @@ function AppContent() {
             <span className="detail-label">Time</span>
             <span className="detail-value">{ride.time}</span>
           </div>
+          {ride.carType && (
+            <div className="detail-row">
+              <span className="detail-label">Car Type</span>
+              <span className="detail-value">{ride.carType}</span>
+            </div>
+          )}
           <div className="detail-row">
             <span className="detail-label">Posted by</span>
             <span className="detail-value">{ride.hostName}</span>
