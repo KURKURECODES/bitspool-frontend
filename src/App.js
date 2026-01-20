@@ -23,6 +23,11 @@ function AppContent() {
   const [myRides, setMyRides] = useState([]);
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState({ phoneNumber: null });
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved === 'true';
+  });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     hostName: '',
@@ -173,6 +178,16 @@ function AppContent() {
       }));
     }
   }, [currentUser, currentView, userProfile.phoneNumber]);
+
+  // Dark mode effect
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
   }, [currentUser, currentView]);
 
   const handleLogin = async () => {
@@ -405,19 +420,29 @@ function AppContent() {
   // --- COMPONENT: Navbar ---
   const Navbar = () => (
     <nav className="navbar">
-      <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
-        <div className="logo-icon">♦</div> BITSPool
+      <div className="navbar-left">
+        <button className="theme-toggle" onClick={toggleDarkMode} title={darkMode ? 'Light mode' : 'Dark mode'}>
+          {darkMode ? '☀️' : '🌙'}
+        </button>
+        <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
+          <div className="logo-icon">♦</div> BITSPool
+        </div>
       </div>
-      <div className="nav-links">
+      
+      <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        {mobileMenuOpen ? '✕' : '☰'}
+      </button>
+      
+      <div className={`nav-links ${mobileMenuOpen ? 'mobile open' : ''}`}>
         {currentUser && (
           <>
-            <span className="nav-item" onClick={() => setCurrentView('home')}>Home</span>
-            <span className="nav-item" onClick={() => setCurrentView('browse')}>Browse Rides</span>
-            <span className="nav-item" onClick={() => setCurrentView('myrides')}>My Rides</span>
-            <span className="nav-item" onClick={() => setCurrentView('post')}>Post a Ride</span>
+            <span className="nav-item" onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }}>Home</span>
+            <span className="nav-item" onClick={() => { setCurrentView('browse'); setMobileMenuOpen(false); }}>Browse Rides</span>
+            <span className="nav-item" onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>My Rides</span>
+            <span className="nav-item" onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>Post a Ride</span>
           </>
         )}
-        <button className="btn-login" onClick={currentUser ? handleLogout : handleLogin}>
+        <button className="btn-login" onClick={() => { currentUser ? handleLogout() : handleLogin(); setMobileMenuOpen(false); }}>
           {currentUser ? `Logout` : 'Sign in with BITS Email'}
         </button>
       </div>

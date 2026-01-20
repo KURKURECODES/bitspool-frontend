@@ -7,8 +7,20 @@
   --text-main: #111827;
   --text-secondary: #6B7280;
   --bg-light: #F9FAFB;
+  --bg-white: #FFFFFF;
   --border-color: #E5E7EB;
   --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] {
+  --primary-red: #EF4444;
+  --primary-hover: #DC2626;
+  --text-main: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --bg-light: #1F2937;
+  --bg-white: #111827;
+  --border-color: #374151;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -19,9 +31,10 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #fff;
+  background-color: var(--bg-white);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 /* --- Navigation --- */
@@ -30,11 +43,36 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: white;
+  background: var(--bg-white);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: background-color 0.3s;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.theme-toggle {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.3s;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
 }
 
 .logo {
@@ -58,6 +96,11 @@ body {
   font-size: 14px;
 }
 
+[data-theme="dark"] .logo-icon {
+  background: white;
+  color: black;
+}
+
 .nav-links {
   display: flex;
   gap: 2rem;
@@ -69,6 +112,7 @@ body {
   text-decoration: none;
   font-weight: 500;
   cursor: pointer;
+  transition: color 0.3s;
 }
 
 .nav-item:hover {
@@ -178,18 +222,17 @@ body {
 }
 
 .ride-card {
-  background: white;
+  background: var(--bg-white);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--card-shadow);
   cursor: pointer;
-  transition: transform 0.2s;
-  border: 1px solid transparent;
+  transition: transform 0.2s, background-color 0.3s;
+  border: 1px solid var(--border-color);
 }
 
 .ride-card:hover {
   transform: translateY(-4px);
-  border-color: var(--border-color);
 }
 
 .card-image {
@@ -276,15 +319,17 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-white);
   padding: 2rem;
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
   position: relative;
+  transition: background-color 0.3s;
 }
 
 .close-btn {
@@ -325,21 +370,144 @@ body {
 .text-pilani { color: #888; font-size: 0.8rem; margin-top: 4px;}
 .error-msg { color: var(--primary-red); font-size: 0.9rem; margin-bottom: 1rem; }
 
+/* Mobile Menu */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.nav-links.mobile {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.nav-links.mobile.open {
+  display: flex;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .navbar {
         padding: 1rem;
+        flex-wrap: wrap;
     }
+    
+    .navbar-left {
+        gap: 0.5rem;
+    }
+    
+    .logo {
+        font-size: 1.1rem;
+    }
+    
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    
     .nav-links {
-        gap: 1rem;
+        display: none;
     }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
     .nav-item {
-        font-size: 0.9rem;
+        font-size: 1rem;
+        padding: 0.5rem 0;
+        width: 100%;
+        text-align: center;
     }
+    
+    .btn-login {
+        width: 100%;
+        text-align: center;
+    }
+    
     .hero {
         min-height: 400px;
+        padding: 3rem 1rem;
     }
+    
     .hero h1 {
         font-size: 1.75rem;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .hero-buttons button {
+        width: 100%;
+    }
+    
+    .rides-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+    
+    .form-container {
+        padding: 1.5rem 1rem;
+    }
+    
+    .modal-content {
+        padding: 1.5rem;
+        max-width: 95%;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0.75rem;
+    }
+    
+    .logo {
+        font-size: 1rem;
+    }
+    
+    .theme-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+    
+    .card-route {
+        font-size: 1rem;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.75rem 0;
+    }
+    
+    .detail-label, .detail-value {
+        width: 100%;
     }
 }
