@@ -218,6 +218,21 @@ function AppContent() {
     continueRequestRide(ride, passengerPhone);
   };
 
+  // Open WhatsApp link (iOS compatible)
+  const openWhatsApp = (url) => {
+    // iOS Safari blocks window.open for deep links, use location.href instead
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    if (isIOS) {
+      // For iOS, use location.href which works better with deep links
+      window.location.href = url;
+    } else {
+      // For Android and desktop, window.open works fine
+      window.open(url, '_blank');
+    }
+  };
+
   const continueRequestRide = async (ride, passengerPhone) => {
     try {
       setLoading(true);
@@ -232,7 +247,7 @@ function AppContent() {
       setSelectedRide(null);
       fetchRides();
       if (response.hostWhatsAppLink && window.confirm('Request sent! Click OK to notify host via WhatsApp.')) {
-        window.open(response.hostWhatsAppLink, '_blank');
+        openWhatsApp(response.hostWhatsAppLink);
       }
     } catch (err) {
       alert('Error: ' + err.message);
