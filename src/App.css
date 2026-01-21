@@ -423,6 +423,15 @@ body {
   margin-bottom: 0.375rem;
 }
 
+.ride-car {
+  font-size: 0.75rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .ride-route {
   display: flex;
   align-items: center;

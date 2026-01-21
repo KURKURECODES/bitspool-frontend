@@ -655,6 +655,9 @@ function AppContent() {
                         
                         <div className="ride-main">
                           <div className="ride-host">Hosted by {ride.hostName}</div>
+                          {ride.carType && ride.carType !== 'Not specified' && (
+                            <div className="ride-car"><FaCar /> {ride.carType}</div>
+                          )}
                           <div className="ride-route">
                             <div>
                               <div className="ride-location">{ride.origin}</div>
@@ -676,7 +679,7 @@ function AppContent() {
                             <FaClock /> {ride.time}
                           </div>
                           <div className="ride-seats">
-                            <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal}/{ride.seatsTotal} seats
+                            <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal} seats left
                           </div>
                         </div>
                         
