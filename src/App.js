@@ -44,10 +44,17 @@ function AppContent() {
     contactNumber: ''
   });
 
-  // Get rides where user is a passenger (joined rides)
-  const joinedRides = rides.filter(ride => 
-    ride.passengers?.some(p => p.email === currentUser?.email) && ride.hostEmail !== currentUser?.email
-  );
+  // Get rides where user is a passenger (joined rides) - filter out past rides
+  const joinedRides = rides.filter(ride => {
+    if (!ride.passengers?.some(p => p.email === currentUser?.email)) return false;
+    if (ride.hostEmail === currentUser?.email) return false;
+    
+    // Filter out past rides (date + time has passed)
+    const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
+    const [hours, minutes] = (ride.time || '23:59').split(':').map(Number);
+    rideDate.setHours(hours || 23, minutes || 59, 0, 0);
+    return rideDate >= new Date();
+  });
 
   const [error, setError] = useState('');
 
@@ -348,12 +355,27 @@ function AppContent() {
     });
   };
 
-  // Filter rides (exclude full rides from browse)
+  // Filter rides for Browse (exclude full rides AND past rides)
   const filteredRides = rides.filter(ride => {
     const seatsLeft = ride.seatsAvailable ?? ride.seatsTotal;
-    if (seatsLeft <= 0) return false; // Hide full rides
+    if (seatsLeft <= 0) return false; // Hide full rides from browse
+    
+    // Filter out past rides
+    const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
+    const [hours, minutes] = (ride.time || '23:59').split(':').map(Number);
+    rideDate.setHours(hours || 23, minutes || 59, 0, 0);
+    if (rideDate < new Date()) return false;
+    
     if (filter === 'all') return true;
     return getRideType(ride) === filter;
+  });
+
+  // Filter myRides to exclude past rides (but keep full rides)
+  const filteredMyRides = myRides.filter(ride => {
+    const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
+    const [hours, minutes] = (ride.time || '23:59').split(':').map(Number);
+    rideDate.setHours(hours || 23, minutes || 59, 0, 0);
+    return rideDate >= new Date();
   });
 
   // Sign In Page - with special handling for approval links
@@ -563,11 +585,11 @@ function AppContent() {
               </div>
               <div className="home-stats">
                 <div className="stat-card clickable" onClick={() => setCurrentView('browse')}>
-                  <div className="stat-number">{dataLoaded ? rides.length : '...'}</div>
+                  <div className="stat-number">{dataLoaded ? filteredRides.length : '...'}</div>
                   <div className="stat-label">Active Rides</div>
                 </div>
                 <div className="stat-card clickable" onClick={() => setCurrentView('myrides')}>
-                  <div className="stat-number">{dataLoaded ? myRides.length : '...'}</div>
+                  <div className="stat-number">{dataLoaded ? filteredMyRides.length : '...'}</div>
                   <div className="stat-label">Your Rides</div>
                 </div>
                 <div className="stat-card clickable" onClick={() => setCurrentView('joined')}>
@@ -673,21 +695,21 @@ function AppContent() {
               <div className="page-header">
                 <div>
                   <h1 className="page-title">My Rides</h1>
-                  <p className="page-subtitle">Rides you've posted ({myRides.length})</p>
+                  <p className="page-subtitle">Rides you've posted ({filteredMyRides.length})</p>
                 </div>
               </div>
 
-              {myRides.length === 0 ? (
+              {filteredMyRides.length === 0 ? (
                 <div className="empty-state">
-                  <h3>No rides posted yet</h3>
-                  <p>Post your first ride and find co-passengers!</p>
+                  <h3>No upcoming rides</h3>
+                  <p>Post a ride and find co-passengers!</p>
                   <button className="btn-primary" onClick={() => setCurrentView('post')}>
                     <FaPlus /> Post a Ride
                   </button>
                 </div>
               ) : (
                 <div className="rides-list">
-                  {myRides.map((ride, index) => {
+                  {filteredMyRides.map((ride, index) => {
                     const rideType = getRideType(ride);
                     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
                     
