@@ -698,10 +698,10 @@ function AppContent() {
                   onClick={() => !notification.read && markNotificationRead(notification.id)}
                 >
                   <div className="notification-icon">
-                    {notification.type === 'request_approved' && '✅'}
-                    {notification.type === 'request_rejected' && '❌'}
-                    {notification.type === 'ride_cancelled' && '🚫'}
-                    {notification.type === 'new_request' && '🙋'}
+                    {notification.type === 'request_approved' && <FaCheckCircle style={{color: '#22c55e'}} />}
+                    {notification.type === 'request_rejected' && <FaTimes style={{color: '#ef4444'}} />}
+                    {notification.type === 'ride_cancelled' && <FaTimes style={{color: '#ef4444'}} />}
+                    {notification.type === 'new_request' && <FaUserFriends style={{color: '#3b82f6'}} />}
                   </div>
                   <div className="notification-content">
                     <div className="notification-title">{notification.title}</div>
@@ -1289,14 +1289,14 @@ function AppContent() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setWhatsappModal({ open: false, link: null })}><FaTimes /></button>
             <div style={{textAlign: 'center', padding: '1rem 0'}}>
-              <div style={{fontSize: '48px', marginBottom: '1rem'}}>✅</div>
+              <div style={{fontSize: '48px', marginBottom: '1rem'}}><FaCheckCircle style={{color: '#22c55e', fontSize: '48px'}} /></div>
               <div className="modal-header" style={{justifyContent: 'center', marginBottom: '0.5rem'}}>Request Sent!</div>
               <p style={{color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
                 The host has been notified on the website and via email. They will approve or reject your request soon.
               </p>
               <div style={{background: 'var(--bg-elevated)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem'}}>
                 <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem'}}>
-                  <strong>💡 Want faster response?</strong>
+                  <strong>Want faster response?</strong>
                 </p>
                 <p style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>
                   You can also reach out directly on WhatsApp
@@ -1333,7 +1333,7 @@ function AppContent() {
             {!approvalModal.result && (
               <>
                 <div className="modal-header">
-                  {approvalModal.action === 'approve' ? '✅' : '❌'} Confirm {approvalModal.action === 'approve' ? 'Approval' : 'Rejection'}
+                  Confirm {approvalModal.action === 'approve' ? 'Approval' : 'Rejection'}
                 </div>
                 <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
                   {approvalModal.action === 'approve' 
@@ -1371,7 +1371,7 @@ function AppContent() {
               <>
                 <div style={{textAlign: 'center', padding: '1rem'}}>
                   <div style={{fontSize: '64px', marginBottom: '1rem'}}>
-                    {approvalModal.action === 'approve' ? '✅' : '❌'}
+                    {approvalModal.action === 'approve' ? <FaCheckCircle style={{color: '#22c55e'}} /> : <FaTimes style={{color: '#ef4444'}} />}
                   </div>
                   <h2 style={{color: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444', marginBottom: '1rem'}}>
                     Request {approvalModal.action === 'approve' ? 'Approved!' : 'Rejected'}
@@ -1385,7 +1385,7 @@ function AppContent() {
                       style={{background: '#25D366', marginTop: '1rem'}} 
                       onClick={() => window.open(`https://wa.me/${approvalModal.result.passengerPhone.replace(/\D/g, '')}`, '_blank')}
                     >
-                      💬 Message Passenger on WhatsApp
+                      <FaWhatsapp /> Message Passenger on WhatsApp
                     </button>
                   )}
                   <button 
