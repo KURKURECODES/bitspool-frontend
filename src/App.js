@@ -8,10 +8,14 @@ const HERO_IMAGE_URL = 'https://images.unsplash.com/photo-1449965408869-eaa3f722
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
 
 const RIDE_IMAGES = [
-  'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1503376763036-066120622c74?q=80&w=2070&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=2070&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=2070&auto=format&fit=crop'
+  'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop', // Bus on highway
+  'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop', // Sports car front
+  'https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=2072&auto=format&fit=crop', // Car on road
+  'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop', // Modern SUV
+  'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=2070&auto=format&fit=crop', // White car scenic
+  'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?q=80&w=2064&auto=format&fit=crop', // Friends in car
+  'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=1974&auto=format&fit=crop', // Car interior journey
+  'https://images.unsplash.com/photo-1493238792000-8113da705763?q=80&w=2070&auto=format&fit=crop'  // Road trip sunset
 ];
 
 function AppContent() {
