@@ -1292,7 +1292,7 @@ function AppContent() {
 
       {/* Footer */}
       <footer className="footer">
-        <span>Made with ❤️ by Kurkure & Pulkit</span>
+        <span>Made with ❤️ by Kurkure & Pulkit & Chamarimesh</span>
         <div className="footer-links">
           <span>© 2026 BITSPool</span>
         </div>
