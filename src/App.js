@@ -126,13 +126,19 @@ function AppContent() {
       fetchUserProfile();
       fetchRides();
       fetchMyRides();
-      setFormData(prev => ({
-        ...prev,
-        hostName: currentUser.displayName || prev.hostName,
-        contactNumber: userProfile.phoneNumber || prev.contactNumber
-      }));
     }
   }, [currentUser]);
+
+  // Autofill form when user profile loads
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        hostName: prev.hostName || currentUser.displayName || '',
+        contactNumber: userProfile.phoneNumber || prev.contactNumber || ''
+      }));
+    }
+  }, [currentUser, userProfile.phoneNumber]);
 
   const handleLogin = async () => {
     try {
