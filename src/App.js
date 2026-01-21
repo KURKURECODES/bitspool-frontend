@@ -7,8 +7,22 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-produ
 
 function AppContent() {
   const { currentUser, loginWithGoogle, logout, getIdToken, error: authError } = useAuth();
-  
-  const [currentView, setCurrentView] = useState('home');
+
+  // Torch effect state
+  const [mousePos, setMousePos] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const handleMouseMove = (e) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+  const getGradientStyle = () => {
+    const x = (mousePos.x / window.innerWidth) * 100;
+    const y = (mousePos.y / window.innerHeight) * 100;
+    return {
+      minHeight: "100vh",
+      width: "100vw",
+      background: `radial-gradient(circle at ${x}% ${y}%, rgba(0,255,255,0.18) 120px, rgba(0,0,0,0.98) 350px)`,
+      transition: "background 0.1s",
+    };
+  };
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
@@ -543,7 +557,7 @@ function AppContent() {
   // Sign In Page - with special handling for approval links
   if (!currentUser) {
     return (
-      <div className="App">
+      <div className="App" style={getGradientStyle()} onMouseMove={handleMouseMove}>
         <nav className="navbar">
           <div className="navbar-left">
             <div className="logo">
@@ -675,7 +689,7 @@ function AppContent() {
   };
 
   return (
-    <div className="App">
+    <div className="App" style={getGradientStyle()} onMouseMove={handleMouseMove}>
       {/* Navbar */}
       <nav className="navbar">
         <div className="navbar-left">
