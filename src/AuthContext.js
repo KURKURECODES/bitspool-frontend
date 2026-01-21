@@ -6,7 +6,9 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  onAuthStateChanged 
+  onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence
 } from 'firebase/auth';
 import { auth } from './firebase.config';
 
@@ -20,7 +22,8 @@ const AuthContext = createContext();
 
 // Detect mobile device
 const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768);
 };
 
 export const useAuth = () => {
@@ -53,8 +56,13 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       
+      // Ensure persistence is set before login
+      await setPersistence(auth, browserLocalPersistence);
+      
       // Use redirect for mobile, popup for desktop
       if (isMobile()) {
+        // Store a flag to indicate we're in the middle of redirect login
+        sessionStorage.setItem('authRedirectPending', 'true');
         await signInWithRedirect(auth, provider);
         return null; // Redirect will handle the rest
       } else {
@@ -91,41 +99,70 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Handle redirect result for mobile login
     const handleRedirectResult = async () => {
       try {
+        // Check if we're returning from a redirect
+        const isPending = sessionStorage.getItem('authRedirectPending');
+        
         const result = await getRedirectResult(auth);
-        if (result) {
+        
+        // Clear the pending flag
+        sessionStorage.removeItem('authRedirectPending');
+        
+        if (result && result.user) {
           const user = result.user;
+          console.log('Redirect result received for:', user.email);
+          
           if (!verifyBitsEmail(user.email)) {
             await signOut(auth);
-            setError('Please use your BITS email to sign in');
+            if (isMounted) setError('Please use your BITS email to sign in');
           }
+        } else if (isPending) {
+          // Redirect was initiated but no result - user may have cancelled
+          console.log('Redirect was pending but no result received');
         }
       } catch (err) {
-        setError(err.message);
+        console.error('Redirect result error:', err);
+        sessionStorage.removeItem('authRedirectPending');
+        if (isMounted) setError(err.message);
       }
     };
     
     handleRedirectResult();
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email || 'no user');
+      
       if (user) {
         if (!verifyBitsEmail(user.email)) {
           await signOut(auth);
-          setError('Only BITS email addresses are allowed');
-          setCurrentUser(null);
+          if (isMounted) {
+            setError('Only BITS email addresses are allowed');
+            setCurrentUser(null);
+          }
         } else {
-          setCurrentUser(user);
-          setError(null);
+          if (isMounted) {
+            setCurrentUser(user);
+            setError(null);
+          }
         }
       } else {
-        setCurrentUser(null);
+        if (isMounted) {
+          setCurrentUser(null);
+        }
       }
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const value = {
