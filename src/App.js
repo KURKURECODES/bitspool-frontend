@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaCalendarAlt, FaUserFriends, FaTimes, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaCalendarAlt, FaUserFriends, FaTimes, FaMapMarkerAlt, FaSun, FaMoon, FaBars, FaCar, FaExclamationTriangle, FaCheckCircle, FaPhone, FaArrowRight } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 // --- CONFIGURATION ---
@@ -487,8 +487,9 @@ function AppContent() {
           )}
 
           {isAlreadyPassenger && (
-            <div className="your-ride-modal-badge" style={{background: '#10B981', color: 'white'}}>
-              <strong>✓ You're already on this ride!</strong>
+            <div className="your-ride-modal-badge" style={{background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white'}}>
+              <FaCheckCircle style={{marginRight: '8px'}} />
+              <strong>You're already on this ride</strong>
             </div>
           )}
           
@@ -507,16 +508,15 @@ function AppContent() {
     <nav className="navbar">
       <div className="navbar-left">
         <button className="theme-toggle" onClick={toggleDarkMode} title={darkMode ? 'Light mode' : 'Dark mode'}>
-          {darkMode ? '☀️' : '🌙'}
+          {darkMode ? <FaSun /> : <FaMoon />}
         </button>
         <div className="logo" onClick={() => setCurrentView('home')} style={{cursor: 'pointer'}}>
-          <div className="logo-icon">♦</div> BITSPool
+          <div className="logo-icon"><FaCar /></div> BITSPool
         </div>
       </div>
       
       <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-        {mobileMenuOpen ? '✕' : '☰'}
-      </button>
+        {mobileMenuOpen ? <FaTimes /> : <FaBars />}
       
       <div className={`nav-links ${mobileMenuOpen ? 'mobile open' : ''}`}>
         {currentUser && (
@@ -541,8 +541,8 @@ function AppContent() {
       {/* Error Display */}
       {(authError || error) && (
         <div className="error-banner">
-          <div style={{marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: '600'}}>
-            ⚠️ Error
+          <div style={{marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+            <FaExclamationTriangle /> Error
           </div>
           <div style={{marginBottom: '1rem'}}>
             {authError || error}
@@ -599,7 +599,7 @@ function AppContent() {
               
               {loading ? (
                 <div style={{textAlign: 'center', padding: '2rem'}}>
-                  <div className="loading-spinner">⏳</div>
+                  <div className="loading-spinner"></div>
                   <p>Loading rides...</p>
                 </div>
               ) : error && rides.length === 0 ? (
@@ -670,7 +670,7 @@ function AppContent() {
             </div>
           ) : loading ? (
             <div style={{textAlign: 'center', padding: '2rem'}}>
-              <div className="loading-spinner">⏳</div>
+              <div className="loading-spinner"></div>
               <p>Loading rides...</p>
             </div>
           ) : error && rides.length === 0 ? (
@@ -925,7 +925,7 @@ function AppContent() {
             <button className="close-btn" onClick={handlePhoneModalClose}>
               <FaTimes />
             </button>
-            <div className="modal-header">📱 Enter Your Phone Number</div>
+            <div className="modal-header"><FaPhone style={{marginRight: '10px'}} /> Enter Your Phone Number</div>
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
               We need your phone number to connect you with ride hosts via WhatsApp
             </p>
@@ -954,15 +954,9 @@ function AppContent() {
       )}
       
       {/* --- FOOTER --- */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem',
-        marginTop: '3rem',
-        borderTop: '1px solid #e0e0e0',
-        color: '#666',
-        fontSize: '0.9rem'
-      }}>
-        Made with ❤️ by Kurkure and Pulkit
+      <footer className="footer">
+        <p>Built by <strong>Kurkure</strong> & <strong>Pulkit</strong></p>
+        <p className="footer-sub">BITS Pilani</p>
       </footer>
     </div>
   );
