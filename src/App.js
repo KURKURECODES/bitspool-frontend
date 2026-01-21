@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter } from 'react-icons/fa';
+import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
@@ -8,7 +8,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-produ
 function AppContent() {
   const { currentUser, loginWithGoogle, logout, getIdToken, error: authError } = useAuth();
   
-  const [currentView, setCurrentView] = useState('browse');
+  const [currentView, setCurrentView] = useState('home');
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
@@ -368,18 +368,47 @@ function AppContent() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="navbar-left">
-          <div className="logo">
+          <div className="logo" onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }} style={{cursor: 'pointer'}}>
             <div className="logo-icon"><FaCar /></div>
             <span>BITSPool</span>
           </div>
         </div>
         <div className="campus-badge">BITS Pilani</div>
-        <div className="nav-links">
+        <div className="nav-links desktop-nav">
+          <span className={`nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => setCurrentView('home')}>Home</span>
           <span className={`nav-item ${currentView === 'browse' ? 'active' : ''}`} onClick={() => setCurrentView('browse')}>Browse</span>
           <span className={`nav-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => setCurrentView('myrides')}>My Rides</span>
           <span className={`nav-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => setCurrentView('post')}>Post Ride</span>
         </div>
+        <button className="hamburger-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
       </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu">
+          <div className={`mobile-menu-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }}>
+            <FaHome /> Home
+          </div>
+          <div className={`mobile-menu-item ${currentView === 'browse' ? 'active' : ''}`} onClick={() => { setCurrentView('browse'); setMobileMenuOpen(false); }}>
+            <FaSearch /> Browse Rides
+          </div>
+          <div className={`mobile-menu-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>
+            <FaRoute /> My Rides
+          </div>
+          <div className={`mobile-menu-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>
+            <FaPlus /> Post Ride
+          </div>
+          <div className="mobile-menu-divider"></div>
+          <div className="mobile-menu-user">
+            <FaUser /> {currentUser.displayName || 'Student'}
+          </div>
+          <div className="mobile-menu-item" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
+            <FaSignOutAlt /> Sign Out
+          </div>
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="main-layout">
@@ -411,6 +440,39 @@ function AppContent() {
 
         {/* Main Content */}
         <main className="main-content">
+          {/* Home View */}
+          {currentView === 'home' && (
+            <div className="home-container">
+              <div className="home-hero">
+                <div className="home-icon"><FaCar /></div>
+                <h1 className="home-title">Find a ride with fellow BITSians</h1>
+                <p className="home-subtitle">Share rides to airports, railway stations, and cities. Save money, make friends, and travel together.</p>
+                <div className="home-actions">
+                  <button className="btn-primary btn-large" onClick={() => setCurrentView('browse')}>
+                    <FaSearch /> Browse Rides
+                  </button>
+                  <button className="btn-secondary btn-large" onClick={() => setCurrentView('post')}>
+                    <FaPlus /> Post a Ride
+                  </button>
+                </div>
+              </div>
+              <div className="home-stats">
+                <div className="stat-card">
+                  <div className="stat-number">{rides.length}</div>
+                  <div className="stat-label">Active Rides</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-number">{myRides.length}</div>
+                  <div className="stat-label">Your Rides</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-number">BITS</div>
+                  <div className="stat-label">Pilani Campus</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Browse View */}
           {currentView === 'browse' && (
             <>
