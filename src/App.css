@@ -955,6 +955,10 @@ body {
     padding: 1rem;
   }
   
+  .sidebar.hide-mobile {
+    display: none;
+  }
+  
   .sidebar-section {
     margin-bottom: 1rem;
   }

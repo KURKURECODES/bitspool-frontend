@@ -425,15 +425,15 @@ function AppContent() {
 
       {/* Main Layout */}
       <div className="main-layout">
-        {/* Sidebar */}
-        <aside className="sidebar">
+        {/* Sidebar - hidden on home for mobile */}
+        <aside className={`sidebar ${currentView === 'home' ? 'hide-mobile' : ''}`}>
           <div className="sidebar-section">
             <div className="sidebar-title"><FaFilter /> Filters</div>
             <div className="filter-list">
-              <div className={`filter-item ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All Rides</div>
-              <div className={`filter-item ${filter === 'airport' ? 'active' : ''}`} onClick={() => setFilter('airport')}>Airport</div>
-              <div className={`filter-item ${filter === 'station' ? 'active' : ''}`} onClick={() => setFilter('station')}>Station</div>
-              <div className={`filter-item ${filter === 'city' ? 'active' : ''}`} onClick={() => setFilter('city')}>City</div>
+              <div className={`filter-item ${filter === 'all' ? 'active' : ''}`} onClick={() => { setFilter('all'); setCurrentView('browse'); }}>All Rides</div>
+              <div className={`filter-item ${filter === 'airport' ? 'active' : ''}`} onClick={() => { setFilter('airport'); setCurrentView('browse'); }}>Airport</div>
+              <div className={`filter-item ${filter === 'station' ? 'active' : ''}`} onClick={() => { setFilter('station'); setCurrentView('browse'); }}>Station</div>
+              <div className={`filter-item ${filter === 'city' ? 'active' : ''}`} onClick={() => { setFilter('city'); setCurrentView('browse'); }}>City</div>
             </div>
           </div>
           
