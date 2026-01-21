@@ -93,28 +93,40 @@ function AppContent() {
     return 'city';
   };
 
-  // API call helper
-  const apiCall = async (endpoint, options = {}) => {
-    try {
-      const token = await getIdToken();
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...options.headers,
-        },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Request failed');
+  // API call helper with retry logic
+  const apiCall = async (endpoint, options = {}, retries = 2) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const token = await getIdToken();
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers,
+          },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Request failed');
+        }
+        return await response.json();
+      } catch (err) {
+        if (attempt < retries) {
+          // Wait before retry (500ms, then 1000ms)
+          await new Promise(r => setTimeout(r, (attempt + 1) * 500));
+          continue;
+        }
+        console.error('API Error:', err);
+        throw err;
       }
-      return await response.json();
-    } catch (err) {
-      console.error('API Error:', err);
-      throw err;
     }
   };
+
+  // Wake up the server on page load
+  useEffect(() => {
+    fetch(`${API_URL}/health`).catch(() => {});
+  }, []);
 
   const fetchRides = async () => {
     if (!currentUser) return;
