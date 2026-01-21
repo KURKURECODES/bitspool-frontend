@@ -12,6 +12,7 @@ function AppContent() {
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
+  const [joinedRidesData, setJoinedRidesData] = useState([]); // Separate state for joined rides from API
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState({ phoneNumber: null });
@@ -44,11 +45,8 @@ function AppContent() {
     contactNumber: ''
   });
 
-  // Get rides where user is a passenger (joined rides) - filter out past rides
-  const joinedRides = rides.filter(ride => {
-    if (!ride.passengers?.some(p => p.email === currentUser?.email)) return false;
-    if (ride.hostEmail === currentUser?.email) return false;
-    
+  // Filter joined rides from API data - only filter out past rides
+  const joinedRides = joinedRidesData.filter(ride => {
     // Filter out past rides (date + time has passed)
     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
     const [hours, minutes] = (ride.time || '23:59').split(':').map(Number);
@@ -170,10 +168,20 @@ function AppContent() {
     }
   };
 
+  const fetchJoinedRides = async () => {
+    if (!currentUser) return;
+    try {
+      const data = await apiCall('/api/joined-rides');
+      setJoinedRidesData(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load joined rides:', err.message);
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       setDataLoaded(false);
-      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides()])
+      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides(), fetchJoinedRides()])
         .finally(() => setDataLoaded(true));
     }
   }, [currentUser]);
@@ -203,6 +211,7 @@ function AppContent() {
       await logout();
       setRides([]);
       setMyRides([]);
+      setJoinedRidesData([]);
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -297,6 +306,7 @@ function AppContent() {
       });
       setSelectedRide(null);
       fetchRides();
+      fetchJoinedRides(); // Refresh joined rides after requesting
       if (response.hostWhatsAppLink) {
         setWhatsappModal({ open: true, link: response.hostWhatsAppLink });
       } else {
@@ -308,7 +318,6 @@ function AppContent() {
       setLoading(false);
     }
   };
-
   // Handle approval/rejection from WhatsApp link (secure endpoint)
   const handleApprovalResponse = async () => {
     if (!approvalModal.requestId || !approvalModal.action || !approvalModal.token) return;
@@ -333,6 +342,7 @@ function AppContent() {
       // Refresh rides data
       fetchRides();
       fetchMyRides();
+      fetchJoinedRides();
       
     } catch (err) {
       setApprovalModal(prev => ({ 
