@@ -519,7 +519,7 @@ function AppContent() {
             <h1 className="signin-title">Welcome to BITSPool</h1>
             {approvalModal.open ? (
               <>
-                <p className="signin-subtitle" style={{color: '#f97316'}}>
+                <p className="signin-subtitle" style={{color: '#60C58D'}}>
                   🔐 You need to sign in as the <strong>ride host</strong> to {approvalModal.action} this request.
                 </p>
                 <p className="signin-subtitle" style={{fontSize: '14px', marginTop: '8px'}}>
@@ -733,13 +733,13 @@ function AppContent() {
             <FaSearch /> Browse Rides
           </div>
           <div className={`mobile-menu-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>
-            <FaRoute /> My Rides {pendingRequests.length > 0 && <span className="menu-badge" style={{background: '#f97316'}}>{pendingRequests.length}</span>}
+            <FaRoute /> My Rides {pendingRequests.length > 0 && <span className="menu-badge" style={{background: '#60C58D'}}>{pendingRequests.length}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'joined' ? 'active' : ''}`} onClick={() => { setCurrentView('joined'); setMobileMenuOpen(false); }}>
             <FaTicketAlt /> Joined Rides {joinedRides.length > 0 && <span className="menu-badge">{joinedRides.length}</span>}
           </div>
           <div className={`mobile-menu-item`} onClick={() => { setNotificationsPanelOpen(true); setMobileMenuOpen(false); }}>
-            <FaBell /> Notifications {unreadNotificationsCount > 0 && <span className="menu-badge" style={{background: '#f97316'}}>{unreadNotificationsCount}</span>}
+            <FaBell /> Notifications {unreadNotificationsCount > 0 && <span className="menu-badge" style={{background: '#60C58D'}}>{unreadNotificationsCount}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>
             <FaPlus /> Post Ride
@@ -923,13 +923,13 @@ function AppContent() {
               {pendingRequests.length > 0 && (
                 <div className="pending-requests-section" style={{marginBottom: '2rem'}}>
                   <h2 style={{color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                    <FaBell style={{color: '#f97316'}} /> Pending Requests ({pendingRequests.length})
+                    <FaBell style={{color: '#60C58D'}} /> Pending Requests ({pendingRequests.length})
                   </h2>
                   <div className="rides-list">
                     {pendingRequests.map((request, index) => (
-                      <div key={request.id || index} className="ride-item request-item" style={{borderLeft: '4px solid #f97316'}}>
+                      <div key={request.id || index} className="ride-item request-item" style={{borderLeft: '4px solid #60C58D'}}>
                         <div className="ride-main">
-                          <div className="ride-host" style={{color: '#f97316', fontWeight: '600'}}>
+                          <div className="ride-host" style={{color: '#60C58D', fontWeight: '600'}}>
                             🙋 {request.passengerName} wants to join
                           </div>
                           <div className="ride-route" style={{marginTop: '0.5rem'}}>
@@ -1049,7 +1049,7 @@ function AppContent() {
                               position: 'absolute',
                               top: '0.5rem',
                               right: '0.5rem',
-                              background: '#f97316',
+                              background: '#60C58D',
                               color: 'white',
                               fontSize: '0.7rem',
                               padding: '0.2rem 0.5rem',
