@@ -23,6 +23,10 @@ function AppContent() {
       transition: "background 0.1s",
     };
   };
+
+  // Fix: Declare currentView and setCurrentView at the top
+  const [currentView, setCurrentView] = useState('home');
+
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
