@@ -122,10 +122,13 @@ function AppContent() {
       setLoading(true);
       setError('');
       const data = await apiCall('/api/rides');
-      const validRides = Array.isArray(data) ? data : [];
-      setRides(validRides.reverse());
+      // Only update if we got valid data
+      if (Array.isArray(data)) {
+        setRides(data.reverse());
+      }
     } catch (err) {
-      setError(`Failed to load rides: ${err.message}`);
+      // Only set error, don't clear existing data
+      console.error('Failed to load rides:', err.message);
     } finally {
       setLoading(false);
     }
@@ -162,13 +165,14 @@ function AppContent() {
   const fetchMyRides = async () => {
     if (!currentUser) return;
     try {
-      setLoading(true);
       const data = await apiCall('/api/my-rides');
-      setMyRides(Array.isArray(data) ? data : []);
+      // Only update if we got valid data
+      if (Array.isArray(data)) {
+        setMyRides(data);
+      }
     } catch (err) {
-      setError('Failed to load your rides: ' + err.message);
-    } finally {
-      setLoading(false);
+      // Don't clear existing data on error
+      console.error('Failed to load your rides:', err.message);
     }
   };
 
@@ -176,7 +180,10 @@ function AppContent() {
     if (!currentUser) return;
     try {
       const data = await apiCall('/api/joined-rides');
-      setJoinedRidesData(Array.isArray(data) ? data : []);
+      // Only update if we got valid data
+      if (Array.isArray(data)) {
+        setJoinedRidesData(data);
+      }
     } catch (err) {
       console.error('Failed to load joined rides:', err.message);
     }
@@ -186,7 +193,10 @@ function AppContent() {
     if (!currentUser) return;
     try {
       const data = await apiCall('/api/my-pending-requests');
-      setPendingRequests(Array.isArray(data) ? data : []);
+      // Only update if we got valid data
+      if (Array.isArray(data)) {
+        setPendingRequests(data);
+      }
     } catch (err) {
       console.error('Failed to load pending requests:', err.message);
     }
@@ -239,7 +249,10 @@ function AppContent() {
     if (!currentUser) return;
     try {
       const data = await apiCall('/api/notifications');
-      setNotifications(Array.isArray(data) ? data : []);
+      // Only update if we got valid data
+      if (Array.isArray(data)) {
+        setNotifications(data);
+      }
     } catch (err) {
       console.error('Failed to load notifications:', err.message);
     }
@@ -292,9 +305,13 @@ function AppContent() {
   useEffect(() => {
     if (currentUser) {
       const interval = setInterval(() => {
+        // Refresh all data periodically to keep stats up to date
+        fetchRides();
+        fetchMyRides();
+        fetchJoinedRides();
         fetchPendingRequests();
         fetchNotifications();
-      }, 30000); // Refresh every 30 seconds
+      }, 60000); // Refresh every 60 seconds
       return () => clearInterval(interval);
     }
   }, [currentUser]);
