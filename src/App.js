@@ -432,7 +432,7 @@ function AppContent() {
             <span className="detail-value">{ride.contactNumber}</span>
           </div>
           <div className="detail-row">
-            <span className="detail-label">Seats</span>
+            <span className="detail-label">Seats Left</span>
             <span className="detail-value">{ride.seatsAvailable ?? ride.seatsTotal} left (of {ride.seatsTotal})</span>
           </div>
 
