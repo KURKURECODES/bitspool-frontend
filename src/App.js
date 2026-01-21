@@ -24,6 +24,8 @@ function AppContent() {
   const [whatsappModal, setWhatsappModal] = useState({ open: false, link: null });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [processingRequest, setProcessingRequest] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
   
   // State for approval modal (from WhatsApp link)
   const [approvalModal, setApprovalModal] = useState({ 
@@ -232,18 +234,67 @@ function AppContent() {
     }
   };
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      const data = await apiCall('/api/notifications');
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load notifications:', err.message);
+    }
+  };
+
+  // Mark notification as read
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await apiCall(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+      setNotifications(prev => prev.map(n => 
+        n.id === notificationId ? { ...n, read: true } : n
+      ));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsRead = async () => {
+    try {
+      await apiCall('/api/notifications/mark-all-read', { method: 'POST' });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
+  };
+
+  // Delete notification
+  const deleteNotification = async (notificationId) => {
+    try {
+      await apiCall(`/api/notifications/${notificationId}`, { method: 'DELETE' });
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  // Count unread notifications
+  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
+
   useEffect(() => {
     if (currentUser) {
       setDataLoaded(false);
-      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides(), fetchJoinedRides(), fetchPendingRequests()])
+      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides(), fetchJoinedRides(), fetchPendingRequests(), fetchNotifications()])
         .finally(() => setDataLoaded(true));
     }
   }, [currentUser]);
 
-  // Refresh pending requests periodically
+  // Refresh pending requests and notifications periodically
   useEffect(() => {
     if (currentUser) {
-      const interval = setInterval(fetchPendingRequests, 30000); // Refresh every 30 seconds
+      const interval = setInterval(() => {
+        fetchPendingRequests();
+        fetchNotifications();
+      }, 30000); // Refresh every 30 seconds
       return () => clearInterval(interval);
     }
   }, [currentUser]);
@@ -603,11 +654,74 @@ function AppContent() {
             {pendingRequests.length > 0 && <span className="nav-badge">{pendingRequests.length}</span>}
           </span>
           <span className={`nav-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => setCurrentView('post')}>Post Ride</span>
+          <span 
+            className="nav-item notification-bell" 
+            onClick={() => setNotificationsPanelOpen(!notificationsPanelOpen)}
+            style={{position: 'relative', cursor: 'pointer'}}
+          >
+            <FaBell />
+            {unreadNotificationsCount > 0 && <span className="nav-badge">{unreadNotificationsCount}</span>}
+          </span>
         </div>
         <button className="hamburger-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <FaTimes /> : <FaBars />}
         </button>
       </nav>
+
+      {/* Notifications Panel */}
+      {notificationsPanelOpen && (
+        <div className="notifications-panel">
+          <div className="notifications-header">
+            <h3>Notifications</h3>
+            <div style={{display: 'flex', gap: '0.5rem'}}>
+              {unreadNotificationsCount > 0 && (
+                <button className="mark-all-read-btn" onClick={markAllNotificationsRead}>
+                  Mark all read
+                </button>
+              )}
+              <button className="close-notifications-btn" onClick={() => setNotificationsPanelOpen(false)}>
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+          <div className="notifications-list">
+            {notifications.length === 0 ? (
+              <div className="no-notifications">
+                <FaBell style={{fontSize: '2rem', opacity: 0.3, marginBottom: '0.5rem'}} />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map(notification => (
+                <div 
+                  key={notification.id} 
+                  className={`notification-item ${!notification.read ? 'unread' : ''} ${notification.type}`}
+                  onClick={() => !notification.read && markNotificationRead(notification.id)}
+                >
+                  <div className="notification-icon">
+                    {notification.type === 'request_approved' && '✅'}
+                    {notification.type === 'request_rejected' && '❌'}
+                    {notification.type === 'ride_cancelled' && '🚫'}
+                    {notification.type === 'new_request' && '🙋'}
+                  </div>
+                  <div className="notification-content">
+                    <div className="notification-title">{notification.title}</div>
+                    <div className="notification-message">{notification.message}</div>
+                    <div className="notification-time">
+                      {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                  </div>
+                  <button 
+                    className="delete-notification-btn"
+                    onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
@@ -623,6 +737,9 @@ function AppContent() {
           </div>
           <div className={`mobile-menu-item ${currentView === 'joined' ? 'active' : ''}`} onClick={() => { setCurrentView('joined'); setMobileMenuOpen(false); }}>
             <FaTicketAlt /> Joined Rides {joinedRides.length > 0 && <span className="menu-badge">{joinedRides.length}</span>}
+          </div>
+          <div className={`mobile-menu-item`} onClick={() => { setNotificationsPanelOpen(true); setMobileMenuOpen(false); }}>
+            <FaBell /> Notifications {unreadNotificationsCount > 0 && <span className="menu-badge" style={{background: '#f97316'}}>{unreadNotificationsCount}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>
             <FaPlus /> Post Ride
