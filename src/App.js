@@ -404,6 +404,8 @@ function AppContent() {
     if (!ride) return null;
     
     const isOwnRide = currentUser && ride.hostEmail === currentUser.email;
+    const isAlreadyPassenger = currentUser && ride.passengers && 
+      ride.passengers.some(p => p.email === currentUser.email);
     
     return (
       <div className="modal-overlay" onClick={onClose}>
@@ -468,7 +470,7 @@ function AppContent() {
             </div>
           )}
 
-          {!isOwnRide && (
+          {!isOwnRide && !isAlreadyPassenger && (
             <div style={{marginTop: '1rem'}}>
               <button 
                 className="btn-primary" 
@@ -481,6 +483,12 @@ function AppContent() {
               <p style={{fontSize: '0.85rem', color: '#666', marginTop: '0.5rem', textAlign: 'center'}}>
                 Click to send request with approve/reject links to host
               </p>
+            </div>
+          )}
+
+          {isAlreadyPassenger && (
+            <div className="your-ride-modal-badge" style={{background: '#10B981', color: 'white'}}>
+              <strong>✓ You're already on this ride!</strong>
             </div>
           )}
           
