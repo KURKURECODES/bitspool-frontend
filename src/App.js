@@ -517,6 +517,7 @@ function AppContent() {
       
       <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
         {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+      </button>
       
       <div className={`nav-links ${mobileMenuOpen ? 'mobile open' : ''}`}>
         {currentUser && (

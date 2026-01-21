@@ -20,10 +20,16 @@ provider.setCustomParameters({
 
 const AuthContext = createContext();
 
+// Detect if we're in a problematic in-app browser
+const isInAppBrowser = () => {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  // Detect Instagram, Facebook, LinkedIn, Twitter in-app browsers
+  return /FBAN|FBAV|Instagram|LinkedIn|Twitter|Snapchat/i.test(ua);
+};
+
 // Detect mobile device
 const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (window.innerWidth <= 768);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
 export const useAuth = () => {
@@ -59,24 +65,57 @@ export const AuthProvider = ({ children }) => {
       // Ensure persistence is set before login
       await setPersistence(auth, browserLocalPersistence);
       
-      // Use redirect for mobile, popup for desktop
-      if (isMobile()) {
-        // Store a flag to indicate we're in the middle of redirect login
-        sessionStorage.setItem('authRedirectPending', 'true');
-        await signInWithRedirect(auth, provider);
-        return null; // Redirect will handle the rest
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        if (!verifyBitsEmail(user.email)) {
-          await signOut(auth);
-          throw new Error('Please use your BITS email to sign in');
+      // Check if in-app browser - always use popup (redirect won't work)
+      // Also use popup for mobile since redirect has many issues
+      const usePopup = isInAppBrowser() || !isMobile();
+      
+      if (usePopup) {
+        // Use popup for desktop AND in-app browsers
+        try {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+          
+          if (!verifyBitsEmail(user.email)) {
+            await signOut(auth);
+            throw new Error('Please use your BITS email to sign in');
+          }
+          
+          return user;
+        } catch (popupErr) {
+          // If popup blocked on mobile, try redirect as fallback
+          if (popupErr.code === 'auth/popup-blocked' && isMobile()) {
+            console.log('Popup blocked, trying redirect...');
+            localStorage.setItem('authRedirectPending', 'true');
+            await signInWithRedirect(auth, provider);
+            return null;
+          }
+          throw popupErr;
         }
-        
-        return user;
+      } else {
+        // Mobile native browser - try popup first, fallback to redirect
+        try {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+          
+          if (!verifyBitsEmail(user.email)) {
+            await signOut(auth);
+            throw new Error('Please use your BITS email to sign in');
+          }
+          
+          return user;
+        } catch (popupErr) {
+          // Popup failed/blocked, use redirect
+          if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
+            console.log('Popup failed, using redirect...');
+            localStorage.setItem('authRedirectPending', 'true');
+            await signInWithRedirect(auth, provider);
+            return null;
+          }
+          throw popupErr;
+        }
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.message);
       throw err;
     }
@@ -101,32 +140,34 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
     
-    // Handle redirect result for mobile login
+    // Handle redirect result for mobile login (fallback case)
     const handleRedirectResult = async () => {
       try {
-        // Check if we're returning from a redirect
-        const isPending = sessionStorage.getItem('authRedirectPending');
+        // Check if we're returning from a redirect (use localStorage - survives page reload)
+        const isPending = localStorage.getItem('authRedirectPending');
         
-        const result = await getRedirectResult(auth);
-        
-        // Clear the pending flag
-        sessionStorage.removeItem('authRedirectPending');
-        
-        if (result && result.user) {
-          const user = result.user;
-          console.log('Redirect result received for:', user.email);
+        if (isPending) {
+          console.log('Checking redirect result...');
+          const result = await getRedirectResult(auth);
           
-          if (!verifyBitsEmail(user.email)) {
-            await signOut(auth);
-            if (isMounted) setError('Please use your BITS email to sign in');
+          // Clear the pending flag
+          localStorage.removeItem('authRedirectPending');
+          
+          if (result && result.user) {
+            const user = result.user;
+            console.log('Redirect login successful:', user.email);
+            
+            if (!verifyBitsEmail(user.email)) {
+              await signOut(auth);
+              if (isMounted) setError('Please use your BITS email to sign in');
+            }
+          } else {
+            console.log('Redirect completed but no user - may have been cancelled');
           }
-        } else if (isPending) {
-          // Redirect was initiated but no result - user may have cancelled
-          console.log('Redirect was pending but no result received');
         }
       } catch (err) {
         console.error('Redirect result error:', err);
-        sessionStorage.removeItem('authRedirectPending');
+        localStorage.removeItem('authRedirectPending');
         if (isMounted) setError(err.message);
       }
     };
@@ -147,6 +188,8 @@ export const AuthProvider = ({ children }) => {
           if (isMounted) {
             setCurrentUser(user);
             setError(null);
+            // Clear any pending redirect flag on successful auth
+            localStorage.removeItem('authRedirectPending');
           }
         }
       } else {
