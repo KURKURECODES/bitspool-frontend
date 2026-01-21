@@ -339,6 +339,16 @@ function AppContent() {
     }
   }, [currentUser, userProfile.phoneNumber]);
 
+  // Autofill name when switching to post view
+  useEffect(() => {
+    if (currentView === 'post' && currentUser && !formData.hostName) {
+      setFormData(prev => ({
+        ...prev,
+        hostName: currentUser.displayName || '',
+      }));
+    }
+  }, [currentView, currentUser]);
+
   const handleLogin = async () => {
     try {
       await loginWithGoogle();
