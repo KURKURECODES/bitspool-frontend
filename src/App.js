@@ -22,6 +22,16 @@ function AppContent() {
   const [filter, setFilter] = useState('all');
   const [whatsappModal, setWhatsappModal] = useState({ open: false, link: null });
   
+  // State for approval modal (from WhatsApp link)
+  const [approvalModal, setApprovalModal] = useState({ 
+    open: false, 
+    requestId: null, 
+    action: null, 
+    token: null,
+    processing: false,
+    result: null
+  });
+  
   const [formData, setFormData] = useState({
     hostName: '',
     carType: '',
@@ -40,6 +50,27 @@ function AppContent() {
   );
 
   const [error, setError] = useState('');
+
+  // Check for approval request in URL on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('approve_request');
+    const action = urlParams.get('action');
+    const token = urlParams.get('token');
+    
+    if (requestId && action && token) {
+      setApprovalModal({ 
+        open: true, 
+        requestId, 
+        action, 
+        token,
+        processing: false,
+        result: null
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   // Determine ride type for badge
   const getRideType = (ride) => {
@@ -271,6 +302,52 @@ function AppContent() {
     }
   };
 
+  // Handle approval/rejection from WhatsApp link (secure endpoint)
+  const handleApprovalResponse = async () => {
+    if (!approvalModal.requestId || !approvalModal.action || !approvalModal.token) return;
+    
+    try {
+      setApprovalModal(prev => ({ ...prev, processing: true }));
+      
+      const response = await apiCall(`/api/requests/${approvalModal.requestId}/secure-respond`, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: approvalModal.action,
+          token: approvalModal.token
+        })
+      });
+      
+      setApprovalModal(prev => ({ 
+        ...prev, 
+        processing: false,
+        result: { success: true, ...response }
+      }));
+      
+      // Refresh rides data
+      fetchRides();
+      fetchMyRides();
+      
+    } catch (err) {
+      setApprovalModal(prev => ({ 
+        ...prev, 
+        processing: false,
+        result: { success: false, error: err.message }
+      }));
+    }
+  };
+
+  // Close approval modal
+  const closeApprovalModal = () => {
+    setApprovalModal({ 
+      open: false, 
+      requestId: null, 
+      action: null, 
+      token: null,
+      processing: false,
+      result: null
+    });
+  };
+
   // Filter rides (exclude full rides from browse)
   const filteredRides = rides.filter(ride => {
     const seatsLeft = ride.seatsAvailable ?? ride.seatsTotal;
@@ -279,7 +356,7 @@ function AppContent() {
     return getRideType(ride) === filter;
   });
 
-  // Sign In Page
+  // Sign In Page - with special handling for approval links
   if (!currentUser) {
     return (
       <div className="App">
@@ -295,7 +372,18 @@ function AppContent() {
           <div className="signin-card">
             <div className="signin-logo"><FaCar /></div>
             <h1 className="signin-title">Welcome to BITSPool</h1>
-            <p className="signin-subtitle">Share rides with fellow BITSians. Sign in with your BITS email to continue.</p>
+            {approvalModal.open ? (
+              <>
+                <p className="signin-subtitle" style={{color: '#f97316'}}>
+                  🔐 You need to sign in as the <strong>ride host</strong> to {approvalModal.action} this request.
+                </p>
+                <p className="signin-subtitle" style={{fontSize: '14px', marginTop: '8px'}}>
+                  Only the host who posted the ride can approve or reject requests.
+                </p>
+              </>
+            ) : (
+              <p className="signin-subtitle">Share rides with fellow BITSians. Sign in with your BITS email to continue.</p>
+            )}
             <button className="btn-google" onClick={handleLogin}>
               Sign in with BITS Email
             </button>
@@ -837,6 +925,108 @@ function AppContent() {
                 Open WhatsApp
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Modal - For hosts responding to ride requests */}
+      {approvalModal.open && (
+        <div className="modal-overlay" onClick={closeApprovalModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={closeApprovalModal}><FaTimes /></button>
+            
+            {/* Not yet processed - show confirmation */}
+            {!approvalModal.result && (
+              <>
+                <div className="modal-header">
+                  {approvalModal.action === 'approve' ? '✅' : '❌'} Confirm {approvalModal.action === 'approve' ? 'Approval' : 'Rejection'}
+                </div>
+                <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
+                  {approvalModal.action === 'approve' 
+                    ? 'Are you sure you want to approve this ride request? The passenger will be notified.'
+                    : 'Are you sure you want to reject this ride request? The passenger will be notified.'}
+                </p>
+                <div style={{display: 'flex', gap: '0.75rem'}}>
+                  <button 
+                    className="btn-secondary" 
+                    style={{flex: 1}} 
+                    onClick={closeApprovalModal}
+                    disabled={approvalModal.processing}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    style={{
+                      flex: 1, 
+                      background: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444'
+                    }} 
+                    onClick={handleApprovalResponse}
+                    disabled={approvalModal.processing}
+                  >
+                    {approvalModal.processing 
+                      ? 'Processing...' 
+                      : (approvalModal.action === 'approve' ? 'Yes, Approve' : 'Yes, Reject')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Success result */}
+            {approvalModal.result?.success && (
+              <>
+                <div style={{textAlign: 'center', padding: '1rem'}}>
+                  <div style={{fontSize: '64px', marginBottom: '1rem'}}>
+                    {approvalModal.action === 'approve' ? '✅' : '❌'}
+                  </div>
+                  <h2 style={{color: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444', marginBottom: '1rem'}}>
+                    Request {approvalModal.action === 'approve' ? 'Approved!' : 'Rejected'}
+                  </h2>
+                  <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>
+                    {approvalModal.result.message}
+                  </p>
+                  {approvalModal.result.passengerPhone && approvalModal.action === 'approve' && (
+                    <button 
+                      className="btn-primary" 
+                      style={{background: '#25D366', marginTop: '1rem'}} 
+                      onClick={() => window.open(`https://wa.me/${approvalModal.result.passengerPhone.replace(/\D/g, '')}`, '_blank')}
+                    >
+                      💬 Message Passenger on WhatsApp
+                    </button>
+                  )}
+                  <button 
+                    className="btn-secondary" 
+                    style={{marginTop: '1rem', display: 'block', width: '100%'}} 
+                    onClick={closeApprovalModal}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Error result */}
+            {approvalModal.result && !approvalModal.result.success && (
+              <>
+                <div style={{textAlign: 'center', padding: '1rem'}}>
+                  <div style={{fontSize: '64px', marginBottom: '1rem'}}>🚫</div>
+                  <h2 style={{color: '#ef4444', marginBottom: '1rem'}}>Unable to Process</h2>
+                  <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>
+                    {approvalModal.result.error}
+                  </p>
+                  <p style={{color: 'var(--text-muted)', fontSize: '0.85rem'}}>
+                    Make sure you're logged in with the <strong>host account</strong> that posted the ride.
+                  </p>
+                  <button 
+                    className="btn-secondary" 
+                    style={{marginTop: '1rem'}} 
+                    onClick={closeApprovalModal}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
