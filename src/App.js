@@ -750,7 +750,12 @@ function AppContent() {
                     className="form-input" 
                     value={currentUser.email}
                     disabled
-                    style={{backgroundColor: '#f5f5f5'}}
+                    style={{
+                      backgroundColor: 'var(--bg-light)', 
+                      color: 'var(--text-main)',
+                      opacity: 0.8,
+                      cursor: 'not-allowed'
+                    }}
                   />
                 </div>
 
