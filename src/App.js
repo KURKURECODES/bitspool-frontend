@@ -13,6 +13,7 @@ function AppContent() {
   const [rides, setRides] = useState([]);
   const [myRides, setMyRides] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState({ phoneNumber: null });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
@@ -133,9 +134,9 @@ function AppContent() {
 
   useEffect(() => {
     if (currentUser) {
-      fetchUserProfile();
-      fetchRides();
-      fetchMyRides();
+      setDataLoaded(false);
+      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides()])
+        .finally(() => setDataLoaded(true));
     }
   }, [currentUser]);
 
@@ -472,15 +473,15 @@ function AppContent() {
               </div>
               <div className="home-stats">
                 <div className="stat-card clickable" onClick={() => setCurrentView('browse')}>
-                  <div className="stat-number">{rides.length}</div>
+                  <div className="stat-number">{dataLoaded ? rides.length : '...'}</div>
                   <div className="stat-label">Active Rides</div>
                 </div>
                 <div className="stat-card clickable" onClick={() => setCurrentView('myrides')}>
-                  <div className="stat-number">{myRides.length}</div>
+                  <div className="stat-number">{dataLoaded ? myRides.length : '...'}</div>
                   <div className="stat-label">Your Rides</div>
                 </div>
                 <div className="stat-card clickable" onClick={() => setCurrentView('joined')}>
-                  <div className="stat-number">{joinedRides.length}</div>
+                  <div className="stat-number">{dataLoaded ? joinedRides.length : '...'}</div>
                   <div className="stat-label">Joined Rides</div>
                 </div>
               </div>
