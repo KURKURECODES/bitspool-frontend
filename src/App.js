@@ -706,7 +706,7 @@ function AppContent() {
             </>
           )}
 
-          {/* Post Ride View */}}
+          {/* Post Ride View */}
           {currentView === 'post' && (
             <div className="form-container">
               <h2 className="form-title">Post a New Ride</h2>
