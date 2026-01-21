@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt, FaBell, FaWhatsapp } from 'react-icons/fa';
+import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt, FaBell, FaWhatsapp, FaTrash } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
@@ -206,6 +206,29 @@ function AppContent() {
       alert('Error: ' + err.message);
     } finally {
       setProcessingRequest(null);
+    }
+  };
+
+  const handleCancelRide = async (ride) => {
+    const hasPassengers = ride.passengers?.length > 0;
+    const confirmMsg = hasPassengers 
+      ? `Are you sure you want to cancel this ride? ${ride.passengers.length} passenger(s) will be notified via email.`
+      : 'Are you sure you want to cancel this ride?';
+    
+    if (!window.confirm(confirmMsg)) return;
+    
+    try {
+      setLoading(true);
+      await apiCall(`/api/rides/${ride.id}`, { method: 'DELETE' });
+      setSelectedRide(null);
+      fetchRides();
+      fetchMyRides();
+      fetchPendingRequests();
+      alert('Ride cancelled successfully!');
+    } catch (err) {
+      alert('Error cancelling ride: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -529,7 +552,32 @@ function AppContent() {
           )}
           
           {isOwnRide && (
-            <div className="your-ride-modal-badge">Your Ride</div>
+            <>
+              <div className="your-ride-modal-badge">Your Ride</div>
+              <button 
+                className="btn-cancel" 
+                style={{
+                  marginTop: '1rem',
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'transparent',
+                  color: '#ef4444',
+                  border: '1px solid #ef4444',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+                onClick={() => handleCancelRide(ride)}
+                disabled={loading}
+              >
+                <FaTrash /> {loading ? 'Cancelling...' : 'Cancel Ride'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -920,8 +968,26 @@ function AppContent() {
                             </div>
                           </div>
                           
-                          <div className="ride-actions">
+                          <div className="ride-actions" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end'}}>
                             <span className="your-ride-tag">Your Ride</span>
+                            <button 
+                              className="btn-cancel-small"
+                              style={{
+                                background: 'transparent',
+                                color: '#ef4444',
+                                border: '1px solid #ef4444',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              onClick={(e) => { e.stopPropagation(); handleCancelRide(ride); }}
+                            >
+                              <FaTrash /> Cancel
+                            </button>
                           </div>
                         </div>
                       );
