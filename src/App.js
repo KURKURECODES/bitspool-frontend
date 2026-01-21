@@ -19,6 +19,7 @@ function AppContent() {
   const [tempPhoneNumber, setTempPhoneNumber] = useState('');
   const [phoneModalCallback, setPhoneModalCallback] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [whatsappModal, setWhatsappModal] = useState({ open: false, link: null });
   
   const [formData, setFormData] = useState({
     hostName: '',
@@ -246,8 +247,10 @@ function AppContent() {
       });
       setSelectedRide(null);
       fetchRides();
-      if (response.hostWhatsAppLink && window.confirm('Request sent! Click OK to notify host via WhatsApp.')) {
-        openWhatsApp(response.hostWhatsAppLink);
+      if (response.hostWhatsAppLink) {
+        setWhatsappModal({ open: true, link: response.hostWhatsAppLink });
+      } else {
+        alert('Request sent successfully!');
       }
     } catch (err) {
       alert('Error: ' + err.message);
@@ -444,6 +447,7 @@ function AppContent() {
                   {filteredRides.map((ride, index) => {
                     const rideType = getRideType(ride);
                     const isOwnRide = ride.hostEmail === currentUser.email;
+                    const isAlreadyPassenger = ride.passengers?.some(p => p.email === currentUser.email);
                     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
                     
                     return (
@@ -480,6 +484,8 @@ function AppContent() {
                         <div className="ride-actions">
                           {isOwnRide ? (
                             <span className="your-ride-tag">Your Ride</span>
+                          ) : isAlreadyPassenger ? (
+                            <span className="on-ride-tag"><FaCheckCircle /> On this ride</span>
                           ) : (
                             <button className="btn-join" onClick={(e) => { e.stopPropagation(); handleRequestRide(ride); }}>
                               Join Ride
@@ -647,6 +653,35 @@ function AppContent() {
             <button className="btn-primary btn-block" onClick={handlePhoneSubmit} disabled={!tempPhoneNumber.trim()}>
               Save & Continue
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Confirmation Modal */}
+      {whatsappModal.open && (
+        <div className="modal-overlay" onClick={() => setWhatsappModal({ open: false, link: null })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setWhatsappModal({ open: false, link: null })}><FaTimes /></button>
+            <div className="modal-header"><FaCheckCircle style={{color: '#22c55e'}} /> Request Sent!</div>
+            <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
+              Your ride request has been sent successfully. Would you like to notify the host on WhatsApp?
+            </p>
+            <div style={{display: 'flex', gap: '0.75rem'}}>
+              <button 
+                className="btn-secondary" 
+                style={{flex: 1}} 
+                onClick={() => setWhatsappModal({ open: false, link: null })}
+              >
+                Maybe Later
+              </button>
+              <button 
+                className="btn-primary" 
+                style={{flex: 1, background: '#25D366'}} 
+                onClick={() => { openWhatsApp(whatsappModal.link); setWhatsappModal({ open: false, link: null }); }}
+              >
+                Open WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       )}
