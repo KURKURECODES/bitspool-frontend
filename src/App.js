@@ -271,8 +271,10 @@ function AppContent() {
     }
   };
 
-  // Filter rides
+  // Filter rides (exclude full rides from browse)
   const filteredRides = rides.filter(ride => {
+    const seatsLeft = ride.seatsAvailable ?? ride.seatsTotal;
+    if (seatsLeft <= 0) return false; // Hide full rides
     if (filter === 'all') return true;
     return getRideType(ride) === filter;
   });
@@ -343,7 +345,7 @@ function AppContent() {
           </div>
           <div className="detail-row">
             <span className="detail-label">Seats</span>
-            <span className="detail-value">{ride.seatsAvailable || ride.seatsTotal}/{ride.seatsTotal}</span>
+            <span className="detail-value">{ride.seatsAvailable ?? ride.seatsTotal} left (of {ride.seatsTotal})</span>
           </div>
 
           {ride.passengers?.length > 0 && (
@@ -627,7 +629,7 @@ function AppContent() {
                             <FaClock /> {ride.time}
                           </div>
                           <div className="ride-seats">
-                            <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal}/{ride.seatsTotal} seats
+                            <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
                           </div>
                         </div>
                         
@@ -693,7 +695,7 @@ function AppContent() {
                             <FaClock /> {ride.time}
                           </div>
                           <div className="ride-seats">
-                            <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal}/{ride.seatsTotal} seats
+                            <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
                           </div>
                         </div>
                         
