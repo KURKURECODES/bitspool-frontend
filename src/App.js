@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute } from 'react-icons/fa';
+import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
@@ -24,6 +24,7 @@ function AppContent() {
   const [formData, setFormData] = useState({
     hostName: '',
     carType: '',
+    rideType: 'city',
     origin: '', 
     destination: '',
     date: '',
@@ -32,10 +33,18 @@ function AppContent() {
     contactNumber: ''
   });
 
+  // Get rides where user is a passenger (joined rides)
+  const joinedRides = rides.filter(ride => 
+    ride.passengers?.some(p => p.email === currentUser?.email) && ride.hostEmail !== currentUser?.email
+  );
+
   const [error, setError] = useState('');
 
   // Determine ride type for badge
   const getRideType = (ride) => {
+    // Check if ride has explicit rideType
+    if (ride.rideType) return ride.rideType;
+    // Fallback to text detection
     const text = `${ride.origin} ${ride.destination}`.toLowerCase();
     if (text.includes('airport')) return 'airport';
     if (text.includes('station') || text.includes('railway')) return 'station';
@@ -180,6 +189,7 @@ function AppContent() {
       const rideData = {
         hostName: formData.hostName || currentUser.displayName || 'Anonymous',
         carType: formData.carType,
+        rideType: formData.rideType,
         hostEmail: currentUser.email,
         origin: formData.origin,
         destination: formData.destination,
@@ -191,7 +201,7 @@ function AppContent() {
       
       await apiCall('/api/rides', { method: 'POST', body: JSON.stringify(rideData) });
       alert('Ride posted successfully!');
-      setFormData({ hostName: '', carType: '', origin: '', destination: '', date: '', time: '', seatsTotal: 1, contactNumber: '' });
+      setFormData({ hostName: '', carType: '', rideType: 'city', origin: '', destination: '', date: '', time: '', seatsTotal: 1, contactNumber: '' });
       setCurrentView('browse');
       fetchRides();
     } catch (err) {
@@ -397,6 +407,9 @@ function AppContent() {
           <div className={`mobile-menu-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>
             <FaRoute /> My Rides
           </div>
+          <div className={`mobile-menu-item ${currentView === 'joined' ? 'active' : ''}`} onClick={() => { setCurrentView('joined'); setMobileMenuOpen(false); }}>
+            <FaTicketAlt /> Joined Rides {joinedRides.length > 0 && <span className="menu-badge">{joinedRides.length}</span>}
+          </div>
           <div className={`mobile-menu-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>
             <FaPlus /> Post Ride
           </div>
@@ -457,17 +470,17 @@ function AppContent() {
                 </div>
               </div>
               <div className="home-stats">
-                <div className="stat-card">
+                <div className="stat-card clickable" onClick={() => setCurrentView('browse')}>
                   <div className="stat-number">{rides.length}</div>
                   <div className="stat-label">Active Rides</div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card clickable" onClick={() => setCurrentView('myrides')}>
                   <div className="stat-number">{myRides.length}</div>
                   <div className="stat-label">Your Rides</div>
                 </div>
-                <div className="stat-card">
-                  <div className="stat-number">BITS</div>
-                  <div className="stat-label">Pilani Campus</div>
+                <div className="stat-card clickable" onClick={() => setCurrentView('joined')}>
+                  <div className="stat-number">{joinedRides.length}</div>
+                  <div className="stat-label">Joined Rides</div>
                 </div>
               </div>
             </div>
@@ -627,7 +640,73 @@ function AppContent() {
             </>
           )}
 
-          {/* Post Ride View */}
+          {/* Joined Rides View */}
+          {currentView === 'joined' && (
+            <>
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Joined Rides</h1>
+                  <p className="page-subtitle">Rides you've joined ({joinedRides.length})</p>
+                </div>
+              </div>
+
+              {joinedRides.length === 0 ? (
+                <div className="empty-state">
+                  <h3>No joined rides yet</h3>
+                  <p>Browse available rides and join one!</p>
+                  <button className="btn-primary" onClick={() => setCurrentView('browse')}>
+                    <FaSearch /> Browse Rides
+                  </button>
+                </div>
+              ) : (
+                <div className="rides-list">
+                  {joinedRides.map((ride, index) => {
+                    const rideType = getRideType(ride);
+                    const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
+                    
+                    return (
+                      <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
+                        <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
+                        
+                        <div className="ride-main">
+                          <div className="ride-host">Hosted by {ride.hostName}</div>
+                          <div className="ride-route">
+                            <div>
+                              <div className="ride-location">{ride.origin}</div>
+                              <div className="ride-location-label">Origin</div>
+                            </div>
+                            <span className="route-arrow">→</span>
+                            <div>
+                              <div className="ride-location">{ride.destination}</div>
+                              <div className="ride-location-label">Destination</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="ride-details">
+                          <div className="ride-detail">
+                            <FaCalendar /> {rideDate.toLocaleDateString()}
+                          </div>
+                          <div className="ride-detail">
+                            <FaClock /> {ride.time}
+                          </div>
+                          <div className="ride-seats">
+                            <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal}/{ride.seatsTotal} seats
+                          </div>
+                        </div>
+                        
+                        <div className="ride-actions">
+                          <span className="on-ride-tag"><FaCheckCircle /> Joined</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Post Ride View */}}
           {currentView === 'post' && (
             <div className="form-container">
               <h2 className="form-title">Post a New Ride</h2>
@@ -641,6 +720,16 @@ function AppContent() {
                     <label>Car Type</label>
                     <input name="carType" className="form-input" placeholder="e.g. Swift, Innova" value={formData.carType} onChange={handleChange} required />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Ride Type</label>
+                  <select name="rideType" className="form-select" value={formData.rideType} onChange={handleChange}>
+                    <option value="airport">Airport</option>
+                    <option value="station">Railway Station</option>
+                    <option value="campus">Campus</option>
+                    <option value="city">City</option>
+                  </select>
                 </div>
                 
                 <div className="form-row">
