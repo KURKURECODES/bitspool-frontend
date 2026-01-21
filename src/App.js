@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt } from 'react-icons/fa';
+import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt, FaBell, FaWhatsapp } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
@@ -22,6 +22,8 @@ function AppContent() {
   const [phoneModalCallback, setPhoneModalCallback] = useState(null);
   const [filter, setFilter] = useState('all');
   const [whatsappModal, setWhatsappModal] = useState({ open: false, link: null });
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [processingRequest, setProcessingRequest] = useState(null);
   
   // State for approval modal (from WhatsApp link)
   const [approvalModal, setApprovalModal] = useState({ 
@@ -178,11 +180,48 @@ function AppContent() {
     }
   };
 
+  const fetchPendingRequests = async () => {
+    if (!currentUser) return;
+    try {
+      const data = await apiCall('/api/my-pending-requests');
+      setPendingRequests(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load pending requests:', err.message);
+    }
+  };
+
+  const handleRespondToRequest = async (requestId, action) => {
+    try {
+      setProcessingRequest(requestId);
+      await apiCall(`/api/requests/${requestId}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ action })
+      });
+      // Refresh data
+      fetchPendingRequests();
+      fetchMyRides();
+      fetchRides();
+      alert(`Request ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       setDataLoaded(false);
-      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides(), fetchJoinedRides()])
+      Promise.all([fetchUserProfile(), fetchRides(), fetchMyRides(), fetchJoinedRides(), fetchPendingRequests()])
         .finally(() => setDataLoaded(true));
+    }
+  }, [currentUser]);
+
+  // Refresh pending requests periodically
+  useEffect(() => {
+    if (currentUser) {
+      const interval = setInterval(fetchPendingRequests, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
     }
   }, [currentUser]);
 
@@ -511,7 +550,10 @@ function AppContent() {
         <div className="nav-links desktop-nav">
           <span className={`nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => setCurrentView('home')}>Home</span>
           <span className={`nav-item ${currentView === 'browse' ? 'active' : ''}`} onClick={() => setCurrentView('browse')}>Browse</span>
-          <span className={`nav-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => setCurrentView('myrides')}>My Rides</span>
+          <span className={`nav-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => setCurrentView('myrides')} style={{position: 'relative'}}>
+            My Rides
+            {pendingRequests.length > 0 && <span className="nav-badge">{pendingRequests.length}</span>}
+          </span>
           <span className={`nav-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => setCurrentView('post')}>Post Ride</span>
         </div>
         <button className="hamburger-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -529,7 +571,7 @@ function AppContent() {
             <FaSearch /> Browse Rides
           </div>
           <div className={`mobile-menu-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>
-            <FaRoute /> My Rides
+            <FaRoute /> My Rides {pendingRequests.length > 0 && <span className="menu-badge" style={{background: '#f97316'}}>{pendingRequests.length}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'joined' ? 'active' : ''}`} onClick={() => { setCurrentView('joined'); setMobileMenuOpen(false); }}>
             <FaTicketAlt /> Joined Rides {joinedRides.length > 0 && <span className="menu-badge">{joinedRides.length}</span>}
@@ -712,7 +754,108 @@ function AppContent() {
                 </div>
               </div>
 
-              {filteredMyRides.length === 0 ? (
+              {/* Pending Requests Section */}
+              {pendingRequests.length > 0 && (
+                <div className="pending-requests-section" style={{marginBottom: '2rem'}}>
+                  <h2 style={{color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                    <FaBell style={{color: '#f97316'}} /> Pending Requests ({pendingRequests.length})
+                  </h2>
+                  <div className="rides-list">
+                    {pendingRequests.map((request, index) => (
+                      <div key={request.id || index} className="ride-item request-item" style={{borderLeft: '4px solid #f97316'}}>
+                        <div className="ride-main">
+                          <div className="ride-host" style={{color: '#f97316', fontWeight: '600'}}>
+                            🙋 {request.passengerName} wants to join
+                          </div>
+                          <div className="ride-route" style={{marginTop: '0.5rem'}}>
+                            <div>
+                              <div className="ride-location">{request.rideOrigin}</div>
+                              <div className="ride-location-label">From</div>
+                            </div>
+                            <span className="route-arrow">→</span>
+                            <div>
+                              <div className="ride-location">{request.rideDestination}</div>
+                              <div className="ride-location-label">To</div>
+                            </div>
+                          </div>
+                          <div style={{marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)'}}>
+                            <FaCalendar style={{marginRight: '0.25rem'}} /> {new Date(request.rideDate).toLocaleDateString()} at {request.rideTime}
+                          </div>
+                          <div style={{marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
+                            <FaPhone style={{marginRight: '0.25rem'}} /> {request.passengerPhone}
+                          </div>
+                        </div>
+                        
+                        <div className="ride-actions" style={{flexDirection: 'column', gap: '0.5rem', minWidth: '140px'}}>
+                          <button 
+                            className="btn-approve" 
+                            style={{
+                              background: '#22c55e', 
+                              color: 'white', 
+                              border: 'none', 
+                              padding: '0.5rem 1rem', 
+                              borderRadius: '6px', 
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              width: '100%'
+                            }}
+                            onClick={(e) => { e.stopPropagation(); handleRespondToRequest(request.id, 'approve'); }}
+                            disabled={processingRequest === request.id}
+                          >
+                            {processingRequest === request.id ? '...' : '✓ Approve'}
+                          </button>
+                          <button 
+                            className="btn-reject"
+                            style={{
+                              background: 'transparent', 
+                              color: '#ef4444', 
+                              border: '1px solid #ef4444', 
+                              padding: '0.5rem 1rem', 
+                              borderRadius: '6px', 
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              width: '100%'
+                            }}
+                            onClick={(e) => { e.stopPropagation(); handleRespondToRequest(request.id, 'reject'); }}
+                            disabled={processingRequest === request.id}
+                          >
+                            ✗ Reject
+                          </button>
+                          <a 
+                            href={`https://wa.me/${request.passengerPhone?.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.25rem',
+                              background: 'transparent', 
+                              color: '#25D366', 
+                              border: '1px solid #25D366', 
+                              padding: '0.5rem 1rem', 
+                              borderRadius: '6px', 
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              textDecoration: 'none',
+                              width: '100%',
+                              boxSizing: 'border-box'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FaWhatsapp /> Chat
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Your Rides */}
+              {filteredMyRides.length === 0 && pendingRequests.length === 0 ? (
                 <div className="empty-state">
                   <h3>No upcoming rides</h3>
                   <p>Post a ride and find co-passengers!</p>
@@ -720,49 +863,71 @@ function AppContent() {
                     <FaPlus /> Post a Ride
                   </button>
                 </div>
-              ) : (
-                <div className="rides-list">
-                  {filteredMyRides.map((ride, index) => {
-                    const rideType = getRideType(ride);
-                    const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
-                    
-                    return (
-                      <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
-                        <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
-                        
-                        <div className="ride-main">
-                          <div className="ride-route">
-                            <div>
-                              <div className="ride-location">{ride.origin}</div>
-                              <div className="ride-location-label">Origin</div>
+              ) : filteredMyRides.length > 0 && (
+                <>
+                  {pendingRequests.length > 0 && (
+                    <h2 style={{color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem'}}>
+                      Your Rides
+                    </h2>
+                  )}
+                  <div className="rides-list">
+                    {filteredMyRides.map((ride, index) => {
+                      const rideType = getRideType(ride);
+                      const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
+                      const rideRequests = pendingRequests.filter(r => r.rideId === ride.id);
+                      
+                      return (
+                        <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
+                          <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
+                          {rideRequests.length > 0 && (
+                            <span className="request-badge" style={{
+                              position: 'absolute',
+                              top: '0.5rem',
+                              right: '0.5rem',
+                              background: '#f97316',
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '10px'
+                            }}>
+                              {rideRequests.length} request{rideRequests.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                          
+                          <div className="ride-main">
+                            <div className="ride-route">
+                              <div>
+                                <div className="ride-location">{ride.origin}</div>
+                                <div className="ride-location-label">Origin</div>
+                              </div>
+                              <span className="route-arrow">→</span>
+                              <div>
+                                <div className="ride-location">{ride.destination}</div>
+                                <div className="ride-location-label">Destination</div>
+                              </div>
                             </div>
-                            <span className="route-arrow">→</span>
-                            <div>
-                              <div className="ride-location">{ride.destination}</div>
-                              <div className="ride-location-label">Destination</div>
+                          </div>
+                          
+                          <div className="ride-details">
+                            <div className="ride-detail">
+                              <FaCalendar /> {rideDate.toLocaleDateString()}
+                            </div>
+                            <div className="ride-detail">
+                              <FaClock /> {ride.time}
+                            </div>
+                            <div className="ride-seats">
+                              <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="ride-details">
-                          <div className="ride-detail">
-                            <FaCalendar /> {rideDate.toLocaleDateString()}
-                          </div>
-                          <div className="ride-detail">
-                            <FaClock /> {ride.time}
-                          </div>
-                          <div className="ride-seats">
-                            <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
+                          
+                          <div className="ride-actions">
+                            <span className="your-ride-tag">Your Ride</span>
                           </div>
                         </div>
-                        
-                        <div className="ride-actions">
-                          <span className="your-ride-tag">Your Ride</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </>
           )}
@@ -935,29 +1100,40 @@ function AppContent() {
         </div>
       )}
 
-      {/* WhatsApp Confirmation Modal */}
+      {/* Request Success Modal */}
       {whatsappModal.open && (
         <div className="modal-overlay" onClick={() => setWhatsappModal({ open: false, link: null })}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setWhatsappModal({ open: false, link: null })}><FaTimes /></button>
-            <div className="modal-header"><FaCheckCircle style={{color: '#22c55e'}} /> Request Sent!</div>
-            <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
-              Your ride request has been sent successfully. Would you like to notify the host on WhatsApp?
-            </p>
+            <div style={{textAlign: 'center', padding: '1rem 0'}}>
+              <div style={{fontSize: '48px', marginBottom: '1rem'}}>✅</div>
+              <div className="modal-header" style={{justifyContent: 'center', marginBottom: '0.5rem'}}>Request Sent!</div>
+              <p style={{color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
+                The host has been notified on the website and via email. They will approve or reject your request soon.
+              </p>
+              <div style={{background: 'var(--bg-elevated)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem'}}>
+                <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem'}}>
+                  <strong>💡 Want faster response?</strong>
+                </p>
+                <p style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>
+                  You can also reach out directly on WhatsApp
+                </p>
+              </div>
+            </div>
             <div style={{display: 'flex', gap: '0.75rem'}}>
               <button 
-                className="btn-secondary" 
+                className="btn-primary" 
                 style={{flex: 1}} 
                 onClick={() => setWhatsappModal({ open: false, link: null })}
               >
-                Maybe Later
+                Done
               </button>
               <button 
-                className="btn-primary" 
-                style={{flex: 1, background: '#25D366'}} 
+                className="btn-secondary" 
+                style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}} 
                 onClick={() => { openWhatsApp(whatsappModal.link); setWhatsappModal({ open: false, link: null }); }}
               >
-                Open WhatsApp
+                <FaWhatsapp style={{color: '#25D366'}} /> WhatsApp
               </button>
             </div>
           </div>
