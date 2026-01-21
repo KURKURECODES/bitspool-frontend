@@ -600,10 +600,9 @@ function AppContent() {
 
       {/* Footer */}
       <footer className="footer">
-        <span>2026 BITSPool. Made for students.</span>
+        <span>Made with ❤️ by Kurkure & Pulkit</span>
         <div className="footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
+          <span>© 2026 BITSPool</span>
         </div>
       </footer>
 
