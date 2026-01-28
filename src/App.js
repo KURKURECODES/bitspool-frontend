@@ -1,31 +1,90 @@
-import React, { useState, useEffect } from 'react';
+// Trigger Vercel redeployment: 2026-01-28
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { FaUserFriends, FaTimes, FaCar, FaCheckCircle, FaPhone, FaSignOutAlt, FaPlus, FaClock, FaCalendar, FaUser, FaFilter, FaBars, FaHome, FaSearch, FaRoute, FaTicketAlt, FaBell, FaWhatsapp, FaTrash } from 'react-icons/fa';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://bitspool-backend-production.up.railway.app';
 
+
+const CampusSelectionModal = ({ isOpen, selectedCampus, onSelect }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
+      <div className="modal-content" style={{ maxWidth: '400px' }}>
+        {!selectedCampus && <div className="modal-header" style={{ justifyContent: 'center' }}>Welcome to BITSPool</div>}
+        <div className="modal-header" style={{ justifyContent: 'center', marginBottom: '1.5rem' }}>
+          {selectedCampus ? 'Switch Campus' : 'Select Your Campus'}
+        </div>
+
+        <div className="campus-options" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {['Pilani', 'Hyderabad', 'Goa'].map(campus => (
+            <button
+              key={campus}
+              className={`campus-btn ${selectedCampus === campus ? 'active' : ''}`}
+              onClick={() => onSelect(campus)}
+              style={{
+                padding: '1rem',
+                borderRadius: '12px',
+                border: selectedCampus === campus ? '2px solid #60C58D' : '1px solid rgba(255,255,255,0.1)',
+                background: selectedCampus === campus ? 'rgba(96, 197, 141, 0.1)' : 'rgba(255,255,255,0.05)',
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+              onMouseOver={(e) => {
+                if (selectedCampus !== campus) e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+              }}
+              onMouseOut={(e) => {
+                if (selectedCampus !== campus) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              }}
+            >
+              <span>BITS {campus}</span>
+              {selectedCampus === campus && <FaCheckCircle style={{ color: '#60C58D' }} />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function AppContent() {
   const { currentUser, loginWithGoogle, logout, getIdToken, error: authError } = useAuth();
 
   // Torch effect state
   const [mousePos, setMousePos] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
-  };
-  const getGradientStyle = () => {
+  }, []);
+  const getGradientStyle = useCallback(() => {
     const x = (mousePos.x / window.innerWidth) * 100;
     const y = (mousePos.y / window.innerHeight) * 100;
     return {
       minHeight: "100vh",
       width: "100vw",
-      background: `radial-gradient(circle at ${x}% ${y}%, rgba(0,255,255,0.18) 120px, rgba(0,0,0,0.98) 350px)`,
-      transition: "background 0.1s",
+      background: `
+        radial-gradient(circle at ${x}% ${y}%, rgba(0,255,255,0.15) 150px, rgba(0,0,0,0.98) 400px),
+        linear-gradient(to right, rgba(0,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,255,255,0.03) 1px, transparent 1px),
+        radial-gradient(circle at ${x}% ${y}%, rgba(0,255,255,0.08) 0px, transparent 200px)
+      `,
+      backgroundSize: `100% 100%, 40px 40px, 40px 40px, 100% 100%`,
+      backgroundPosition: `0 0, -1px -1px, -1px -1px, 0 0`,
+      transition: "background-position 0.1s ease-out",
     };
-  };
+  }, [mousePos.x, mousePos.y]);
 
   // Fix: Declare currentView and setCurrentView at the top
   const [currentView, setCurrentView] = useState('home');
+  const [selectedCampus, setSelectedCampus] = useState(localStorage.getItem('user_campus') || null);
+  const [campusModalOpen, setCampusModalOpen] = useState(!localStorage.getItem('user_campus'));
 
   const [selectedRide, setSelectedRide] = useState(null);
   const [rides, setRides] = useState([]);
@@ -44,22 +103,22 @@ function AppContent() {
   const [processingRequest, setProcessingRequest] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
-  
+
   // State for approval modal (from WhatsApp link)
-  const [approvalModal, setApprovalModal] = useState({ 
-    open: false, 
-    requestId: null, 
-    action: null, 
+  const [approvalModal, setApprovalModal] = useState({
+    open: false,
+    requestId: null,
+    action: null,
     token: null,
     processing: false,
     result: null
   });
-  
+
   const [formData, setFormData] = useState({
     hostName: '',
     carType: '',
     rideType: 'city',
-    origin: '', 
+    origin: '',
     destination: '',
     date: '',
     time: '',
@@ -84,12 +143,12 @@ function AppContent() {
     const requestId = urlParams.get('approve_request');
     const action = urlParams.get('action');
     const token = urlParams.get('token');
-    
+
     if (requestId && action && token) {
-      setApprovalModal({ 
-        open: true, 
-        requestId, 
-        action, 
+      setApprovalModal({
+        open: true,
+        requestId,
+        action,
         token,
         processing: false,
         result: null
@@ -143,7 +202,7 @@ function AppContent() {
 
   // Wake up the server on page load
   useEffect(() => {
-    fetch(`${API_URL}/health`).catch(() => {});
+    fetch(`${API_URL}/health`).catch(() => { });
   }, []);
 
   const fetchRides = async () => {
@@ -253,12 +312,12 @@ function AppContent() {
 
   const handleCancelRide = async (ride) => {
     const hasPassengers = ride.passengers?.length > 0;
-    const confirmMsg = hasPassengers 
+    const confirmMsg = hasPassengers
       ? `Are you sure you want to cancel this ride? ${ride.passengers.length} passenger(s) will be notified via email.`
       : 'Are you sure you want to cancel this ride?';
-    
+
     if (!window.confirm(confirmMsg)) return;
-    
+
     try {
       setLoading(true);
       await apiCall(`/api/rides/${ride.id}`, { method: 'DELETE' });
@@ -292,7 +351,7 @@ function AppContent() {
   const markNotificationRead = async (notificationId) => {
     try {
       await apiCall(`/api/notifications/${notificationId}/read`, { method: 'POST' });
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === notificationId ? { ...n, read: true } : n
       ));
     } catch (err) {
@@ -415,9 +474,10 @@ function AppContent() {
         date: new Date(formData.date).toISOString(),
         time: formData.time,
         seatsTotal: parseInt(formData.seatsTotal),
-        contactNumber: formData.contactNumber
+        contactNumber: formData.contactNumber,
+        campus: selectedCampus // Add campus to the ride data
       };
-      
+
       await apiCall('/api/rides', { method: 'POST', body: JSON.stringify(rideData) });
       alert('Ride posted successfully!');
       setFormData({ hostName: '', carType: '', rideType: 'city', origin: '', destination: '', date: '', time: '', seatsTotal: 1, contactNumber: '' });
@@ -433,7 +493,7 @@ function AppContent() {
   const handleRequestRide = async (ride) => {
     if (!currentUser) return alert('Please log in first');
     if (ride.hostEmail === currentUser.email) return alert("You can't request your own ride!");
-    
+
     let passengerPhone = userProfile.phoneNumber;
     if (!passengerPhone) {
       setPhoneModalOpen(true);
@@ -451,9 +511,9 @@ function AppContent() {
   // Open WhatsApp link (iOS compatible)
   const openWhatsApp = (url) => {
     // iOS Safari blocks window.open for deep links, use location.href instead
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     if (isIOS) {
       // For iOS, use location.href which works better with deep links
       window.location.href = url;
@@ -491,10 +551,10 @@ function AppContent() {
   // Handle approval/rejection from WhatsApp link (secure endpoint)
   const handleApprovalResponse = async () => {
     if (!approvalModal.requestId || !approvalModal.action || !approvalModal.token) return;
-    
+
     try {
       setApprovalModal(prev => ({ ...prev, processing: true }));
-      
+
       const response = await apiCall(`/api/requests/${approvalModal.requestId}/secure-respond`, {
         method: 'POST',
         body: JSON.stringify({
@@ -502,21 +562,21 @@ function AppContent() {
           token: approvalModal.token
         })
       });
-      
-      setApprovalModal(prev => ({ 
-        ...prev, 
+
+      setApprovalModal(prev => ({
+        ...prev,
         processing: false,
         result: { success: true, ...response }
       }));
-      
+
       // Refresh rides data
       fetchRides();
       fetchMyRides();
       fetchJoinedRides();
-      
+
     } catch (err) {
-      setApprovalModal(prev => ({ 
-        ...prev, 
+      setApprovalModal(prev => ({
+        ...prev,
         processing: false,
         result: { success: false, error: err.message }
       }));
@@ -525,10 +585,10 @@ function AppContent() {
 
   // Close approval modal
   const closeApprovalModal = () => {
-    setApprovalModal({ 
-      open: false, 
-      requestId: null, 
-      action: null, 
+    setApprovalModal({
+      open: false,
+      requestId: null,
+      action: null,
       token: null,
       processing: false,
       result: null
@@ -539,13 +599,17 @@ function AppContent() {
   const filteredRides = rides.filter(ride => {
     const seatsLeft = ride.seatsAvailable ?? ride.seatsTotal;
     if (seatsLeft <= 0) return false; // Hide full rides from browse
-    
+
     // Filter out past rides
     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
     const [hours, minutes] = (ride.time || '23:59').split(':').map(Number);
     rideDate.setHours(hours || 23, minutes || 59, 0, 0);
     if (rideDate < new Date()) return false;
-    
+
+    // Campus Filter: Default to 'Pilani' if ride.campus is undefined (legacy rides)
+    const rideCampus = ride.campus || 'Pilani';
+    if (selectedCampus && rideCampus !== selectedCampus) return false;
+
     if (filter === 'all') return true;
     return getRideType(ride) === filter;
   });
@@ -557,6 +621,16 @@ function AppContent() {
     rideDate.setHours(hours || 23, minutes || 59, 0, 0);
     return rideDate >= new Date();
   });
+
+  const handleCampusSelect = (campus) => {
+    setSelectedCampus(campus);
+    localStorage.setItem('user_campus', campus);
+    setCampusModalOpen(false);
+    setTimeout(() => {
+      fetchRides();
+      setCurrentView('home');
+    }, 100);
+  };
 
   // Sign In Page - with special handling for approval links
   if (!currentUser) {
@@ -576,10 +650,10 @@ function AppContent() {
             <h1 className="signin-title">Welcome to BITSPool</h1>
             {approvalModal.open ? (
               <>
-                <p className="signin-subtitle" style={{color: '#60C58D'}}>
+                <p className="signin-subtitle" style={{ color: '#60C58D' }}>
                   🔐 You need to sign in as the <strong>ride host</strong> to {approvalModal.action} this request.
                 </p>
-                <p className="signin-subtitle" style={{fontSize: '14px', marginTop: '8px'}}>
+                <p className="signin-subtitle" style={{ fontSize: '14px', marginTop: '8px' }}>
                   Only the host who posted the ride can approve or reject requests.
                 </p>
               </>
@@ -591,22 +665,23 @@ function AppContent() {
             </button>
           </div>
         </div>
+        <CampusSelectionModal isOpen={campusModalOpen} selectedCampus={selectedCampus} onSelect={handleCampusSelect} />
       </div>
     );
   }
 
   // Modal Component
-  const RideModal = ({ ride, onClose }) => {
+  const RideModal = React.memo(({ ride, onClose }) => {
     if (!ride) return null;
     const isOwnRide = currentUser && ride.hostEmail === currentUser.email;
     const isAlreadyPassenger = currentUser && ride.passengers?.some(p => p.email === currentUser.email);
-    
+
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={e => e.stopPropagation()}>
           <button className="close-btn" onClick={onClose}><FaTimes /></button>
           <div className="modal-header">Trip Details</div>
-          
+
           <div className="detail-row">
             <span className="detail-label">From</span>
             <span className="detail-value">{ride.origin}</span>
@@ -648,22 +723,31 @@ function AppContent() {
           )}
 
           {!isOwnRide && !isAlreadyPassenger && (
-            <button className="btn-primary btn-block" style={{marginTop: '1.5rem'}} onClick={() => handleRequestRide(ride)} disabled={loading}>
+            <button
+              className="btn-primary btn-block"
+              style={{ marginTop: '1.5rem' }}
+              onClick={() => {
+                if (window.confirm('Are you sure you want to join this ride?')) {
+                  handleRequestRide(ride);
+                }
+              }}
+              disabled={loading}
+            >
               {loading ? 'Sending...' : 'Join Ride'}
             </button>
           )}
-          
+
           {isAlreadyPassenger && (
             <div className="your-ride-modal-badge">
               <FaCheckCircle /> You're on this ride
             </div>
           )}
-          
+
           {isOwnRide && (
             <>
               <div className="your-ride-modal-badge">Your Ride</div>
-              <button 
-                className="btn-cancel" 
+              <button
+                className="btn-cancel"
                 style={{
                   marginTop: '1rem',
                   width: '100%',
@@ -690,31 +774,33 @@ function AppContent() {
         </div>
       </div>
     );
-  };
+  });
 
   return (
     <div className="App" style={getGradientStyle()} onMouseMove={handleMouseMove}>
       {/* Navbar */}
       <nav className="navbar">
         <div className="navbar-left">
-          <div className="logo" onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }} style={{cursor: 'pointer'}}>
+          <div className="logo" onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
             <div className="logo-icon"><FaCar /></div>
             <span>BITSPool</span>
           </div>
         </div>
-        <div className="campus-badge">BITS Pilani</div>
+        <div className="campus-badge" onClick={() => setCampusModalOpen(true)} style={{ cursor: 'pointer' }}>
+          BITS {selectedCampus || 'Pilani'} <span style={{ fontSize: '0.8em', opacity: 0.8, marginLeft: '4px' }}>▼</span>
+        </div>
         <div className="nav-links desktop-nav">
           <span className={`nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => setCurrentView('home')}>Home</span>
           <span className={`nav-item ${currentView === 'browse' ? 'active' : ''}`} onClick={() => setCurrentView('browse')}>Browse</span>
-          <span className={`nav-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => setCurrentView('myrides')} style={{position: 'relative'}}>
+          <span className={`nav-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => setCurrentView('myrides')} style={{ position: 'relative' }}>
             My Rides
             {pendingRequests.length > 0 && <span className="nav-badge">{pendingRequests.length}</span>}
           </span>
           <span className={`nav-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => setCurrentView('post')}>Post Ride</span>
-          <span 
-            className="nav-item notification-bell" 
+          <span
+            className="nav-item notification-bell"
             onClick={() => setNotificationsPanelOpen(!notificationsPanelOpen)}
-            style={{position: 'relative', cursor: 'pointer'}}
+            style={{ position: 'relative', cursor: 'pointer' }}
           >
             <FaBell />
             {unreadNotificationsCount > 0 && <span className="nav-badge">{unreadNotificationsCount}</span>}
@@ -730,7 +816,7 @@ function AppContent() {
         <div className="notifications-panel">
           <div className="notifications-header">
             <h3>Notifications</h3>
-            <div style={{display: 'flex', gap: '0.5rem'}}>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               {unreadNotificationsCount > 0 && (
                 <button className="mark-all-read-btn" onClick={markAllNotificationsRead}>
                   Mark all read
@@ -744,30 +830,30 @@ function AppContent() {
           <div className="notifications-list">
             {notifications.length === 0 ? (
               <div className="no-notifications">
-                <FaBell style={{fontSize: '2rem', opacity: 0.3, marginBottom: '0.5rem'}} />
+                <FaBell style={{ fontSize: '2rem', opacity: 0.3, marginBottom: '0.5rem' }} />
                 <p>No notifications yet</p>
               </div>
             ) : (
               notifications.map(notification => (
-                <div 
-                  key={notification.id} 
+                <div
+                  key={notification.id}
                   className={`notification-item ${!notification.read ? 'unread' : ''} ${notification.type}`}
                   onClick={() => !notification.read && markNotificationRead(notification.id)}
                 >
                   <div className="notification-icon">
-                    {notification.type === 'request_approved' && <FaCheckCircle style={{color: '#22c55e'}} />}
-                    {notification.type === 'request_rejected' && <FaTimes style={{color: '#ef4444'}} />}
-                    {notification.type === 'ride_cancelled' && <FaTimes style={{color: '#ef4444'}} />}
-                    {notification.type === 'new_request' && <FaUserFriends style={{color: '#3b82f6'}} />}
+                    {notification.type === 'request_approved' && <FaCheckCircle style={{ color: '#22c55e' }} />}
+                    {notification.type === 'request_rejected' && <FaTimes style={{ color: '#ef4444' }} />}
+                    {notification.type === 'ride_cancelled' && <FaTimes style={{ color: '#ef4444' }} />}
+                    {notification.type === 'new_request' && <FaUserFriends style={{ color: '#3b82f6' }} />}
                   </div>
                   <div className="notification-content">
                     <div className="notification-title">{notification.title}</div>
                     <div className="notification-message">{notification.message}</div>
                     <div className="notification-time">
-                      {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <button 
+                  <button
                     className="delete-notification-btn"
                     onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
                   >
@@ -790,13 +876,13 @@ function AppContent() {
             <FaSearch /> Browse Rides
           </div>
           <div className={`mobile-menu-item ${currentView === 'myrides' ? 'active' : ''}`} onClick={() => { setCurrentView('myrides'); setMobileMenuOpen(false); }}>
-            <FaRoute /> My Rides {pendingRequests.length > 0 && <span className="menu-badge" style={{background: '#60C58D'}}>{pendingRequests.length}</span>}
+            <FaRoute /> My Rides {pendingRequests.length > 0 && <span className="menu-badge" style={{ background: '#60C58D' }}>{pendingRequests.length}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'joined' ? 'active' : ''}`} onClick={() => { setCurrentView('joined'); setMobileMenuOpen(false); }}>
             <FaTicketAlt /> Joined Rides {joinedRides.length > 0 && <span className="menu-badge">{joinedRides.length}</span>}
           </div>
           <div className={`mobile-menu-item`} onClick={() => { setNotificationsPanelOpen(true); setMobileMenuOpen(false); }}>
-            <FaBell /> Notifications {unreadNotificationsCount > 0 && <span className="menu-badge" style={{background: '#60C58D'}}>{unreadNotificationsCount}</span>}
+            <FaBell /> Notifications {unreadNotificationsCount > 0 && <span className="menu-badge" style={{ background: '#60C58D' }}>{unreadNotificationsCount}</span>}
           </div>
           <div className={`mobile-menu-item ${currentView === 'post' ? 'active' : ''}`} onClick={() => { setCurrentView('post'); setMobileMenuOpen(false); }}>
             <FaPlus /> Post Ride
@@ -824,7 +910,7 @@ function AppContent() {
               <div className={`filter-item ${filter === 'city' ? 'active' : ''}`} onClick={() => { setFilter('city'); setCurrentView('browse'); }}>City</div>
             </div>
           </div>
-          
+
           <div className="user-card">
             <div className="user-info">
               <div className="user-avatar"><FaUser /></div>
@@ -912,11 +998,11 @@ function AppContent() {
                     const isOwnRide = ride.hostEmail === currentUser.email;
                     const isAlreadyPassenger = ride.passengers?.some(p => p.email === currentUser.email);
                     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
-                    
+
                     return (
                       <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
                         <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
-                        
+
                         <div className="ride-main">
                           <div className="ride-host">Hosted by {ride.hostName}</div>
                           {ride.carType && ride.carType !== 'Not specified' && (
@@ -934,7 +1020,7 @@ function AppContent() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="ride-details">
                           <div className="ride-detail">
                             <FaCalendar /> {rideDate.toLocaleDateString()}
@@ -946,14 +1032,22 @@ function AppContent() {
                             <FaUserFriends /> {ride.seatsAvailable || ride.seatsTotal} seats left
                           </div>
                         </div>
-                        
+
                         <div className="ride-actions">
                           {isOwnRide ? (
                             <span className="your-ride-tag">Your Ride</span>
                           ) : isAlreadyPassenger ? (
                             <span className="on-ride-tag"><FaCheckCircle /> On this ride</span>
                           ) : (
-                            <button className="btn-join" onClick={(e) => { e.stopPropagation(); handleRequestRide(ride); }}>
+                            <button
+                              className="btn-join"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to join this ride?')) {
+                                  handleRequestRide(ride);
+                                }
+                              }}
+                            >
                               Join Ride
                             </button>
                           )}
@@ -978,18 +1072,18 @@ function AppContent() {
 
               {/* Pending Requests Section */}
               {pendingRequests.length > 0 && (
-                <div className="pending-requests-section" style={{marginBottom: '2rem'}}>
-                  <h2 style={{color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                    <FaBell style={{color: '#60C58D'}} /> Pending Requests ({pendingRequests.length})
+                <div className="pending-requests-section" style={{ marginBottom: '2rem' }}>
+                  <h2 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FaBell style={{ color: '#60C58D' }} /> Pending Requests ({pendingRequests.length})
                   </h2>
                   <div className="rides-list">
                     {pendingRequests.map((request, index) => (
-                      <div key={request.id || index} className="ride-item request-item" style={{borderLeft: '4px solid #60C58D'}}>
+                      <div key={request.id || index} className="ride-item request-item" style={{ borderLeft: '4px solid #60C58D' }}>
                         <div className="ride-main">
-                          <div className="ride-host" style={{color: '#60C58D', fontWeight: '600'}}>
+                          <div className="ride-host" style={{ color: '#60C58D', fontWeight: '600' }}>
                             🙋 {request.passengerName} wants to join
                           </div>
-                          <div className="ride-route" style={{marginTop: '0.5rem'}}>
+                          <div className="ride-route" style={{ marginTop: '0.5rem' }}>
                             <div>
                               <div className="ride-location">{request.rideOrigin}</div>
                               <div className="ride-location-label">From</div>
@@ -1000,23 +1094,23 @@ function AppContent() {
                               <div className="ride-location-label">To</div>
                             </div>
                           </div>
-                          <div style={{marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)'}}>
-                            <FaCalendar style={{marginRight: '0.25rem'}} /> {new Date(request.rideDate).toLocaleDateString()} at {request.rideTime}
+                          <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            <FaCalendar style={{ marginRight: '0.25rem' }} /> {new Date(request.rideDate).toLocaleDateString()} at {request.rideTime}
                           </div>
-                          <div style={{marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
-                            <FaPhone style={{marginRight: '0.25rem'}} /> {request.passengerPhone}
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            <FaPhone style={{ marginRight: '0.25rem' }} /> {request.passengerPhone}
                           </div>
                         </div>
-                        
-                        <div className="ride-actions" style={{flexDirection: 'column', gap: '0.5rem', minWidth: '140px'}}>
-                          <button 
-                            className="btn-approve" 
+
+                        <div className="ride-actions" style={{ flexDirection: 'column', gap: '0.5rem', minWidth: '140px' }}>
+                          <button
+                            className="btn-approve"
                             style={{
-                              background: '#22c55e', 
-                              color: 'white', 
-                              border: 'none', 
-                              padding: '0.5rem 1rem', 
-                              borderRadius: '6px', 
+                              background: '#22c55e',
+                              color: 'white',
+                              border: 'none',
+                              padding: '0.5rem 1rem',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               fontSize: '0.85rem',
                               fontWeight: '500',
@@ -1027,14 +1121,14 @@ function AppContent() {
                           >
                             {processingRequest === request.id ? '...' : '✓ Approve'}
                           </button>
-                          <button 
+                          <button
                             className="btn-reject"
                             style={{
-                              background: 'transparent', 
-                              color: '#ef4444', 
-                              border: '1px solid #ef4444', 
-                              padding: '0.5rem 1rem', 
-                              borderRadius: '6px', 
+                              background: 'transparent',
+                              color: '#ef4444',
+                              border: '1px solid #ef4444',
+                              padding: '0.5rem 1rem',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               fontSize: '0.85rem',
                               fontWeight: '500',
@@ -1045,7 +1139,7 @@ function AppContent() {
                           >
                             ✗ Reject
                           </button>
-                          <a 
+                          <a
                             href={`https://wa.me/${request.passengerPhone?.replace(/\D/g, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1054,11 +1148,11 @@ function AppContent() {
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '0.25rem',
-                              background: 'transparent', 
-                              color: '#25D366', 
-                              border: '1px solid #25D366', 
-                              padding: '0.5rem 1rem', 
-                              borderRadius: '6px', 
+                              background: 'transparent',
+                              color: '#25D366',
+                              border: '1px solid #25D366',
+                              padding: '0.5rem 1rem',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               fontSize: '0.8rem',
                               textDecoration: 'none',
@@ -1088,7 +1182,7 @@ function AppContent() {
               ) : filteredMyRides.length > 0 && (
                 <>
                   {pendingRequests.length > 0 && (
-                    <h2 style={{color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem'}}>
+                    <h2 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '1rem' }}>
                       Your Rides
                     </h2>
                   )}
@@ -1097,7 +1191,7 @@ function AppContent() {
                       const rideType = getRideType(ride);
                       const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
                       const rideRequests = pendingRequests.filter(r => r.rideId === ride.id);
-                      
+
                       return (
                         <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
                           <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
@@ -1115,7 +1209,7 @@ function AppContent() {
                               {rideRequests.length} request{rideRequests.length > 1 ? 's' : ''}
                             </span>
                           )}
-                          
+
                           <div className="ride-main">
                             <div className="ride-route">
                               <div>
@@ -1129,7 +1223,7 @@ function AppContent() {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="ride-details">
                             <div className="ride-detail">
                               <FaCalendar /> {rideDate.toLocaleDateString()}
@@ -1141,10 +1235,10 @@ function AppContent() {
                               <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
                             </div>
                           </div>
-                          
-                          <div className="ride-actions" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end'}}>
+
+                          <div className="ride-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                             <span className="your-ride-tag">Your Ride</span>
-                            <button 
+                            <button
                               className="btn-cancel-small"
                               style={{
                                 background: 'transparent',
@@ -1195,11 +1289,11 @@ function AppContent() {
                   {joinedRides.map((ride, index) => {
                     const rideType = getRideType(ride);
                     const rideDate = ride.date?.toDate ? ride.date.toDate() : new Date(ride.date);
-                    
+
                     return (
                       <div key={ride.id || index} className="ride-item" onClick={() => setSelectedRide(ride)}>
                         <span className={`ride-type-badge ${rideType}`}>{rideType}</span>
-                        
+
                         <div className="ride-main">
                           <div className="ride-host">Hosted by {ride.hostName}</div>
                           <div className="ride-route">
@@ -1214,7 +1308,7 @@ function AppContent() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="ride-details">
                           <div className="ride-detail">
                             <FaCalendar /> {rideDate.toLocaleDateString()}
@@ -1226,7 +1320,7 @@ function AppContent() {
                             <FaUserFriends /> {ride.seatsAvailable ?? ride.seatsTotal} seats left
                           </div>
                         </div>
-                        
+
                         <div className="ride-actions">
                           <span className="on-ride-tag"><FaCheckCircle /> Joined</span>
                         </div>
@@ -1263,7 +1357,7 @@ function AppContent() {
                     <option value="city">City</option>
                   </select>
                 </div>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label>From (Origin)</label>
@@ -1274,7 +1368,7 @@ function AppContent() {
                     <input name="destination" className="form-input" placeholder="Drop location" value={formData.destination} onChange={handleChange} required />
                   </div>
                 </div>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label>Date</label>
@@ -1285,12 +1379,12 @@ function AppContent() {
                     <input name="time" type="time" className="form-input" value={formData.time} onChange={handleChange} required />
                   </div>
                 </div>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label>Seats Available</label>
                     <select name="seatsTotal" className="form-select" value={formData.seatsTotal} onChange={handleChange}>
-                      {[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n}</option>)}
+                      {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
@@ -1298,7 +1392,7 @@ function AppContent() {
                     <input name="contactNumber" className="form-input" placeholder="+91 98765 43210" value={formData.contactNumber} onChange={handleChange} required />
                   </div>
                 </div>
-                
+
                 <button type="submit" className="btn-primary btn-block" disabled={loading}>
                   {loading ? 'Posting...' : 'Post Ride'}
                 </button>
@@ -1317,20 +1411,22 @@ function AppContent() {
       </footer>
 
       {/* Modals */}
+      <CampusSelectionModal isOpen={campusModalOpen} selectedCampus={selectedCampus} onSelect={handleCampusSelect} />
+
       {selectedRide && <RideModal ride={selectedRide} onClose={() => setSelectedRide(null)} />}
-      
+
       {phoneModalOpen && (
         <div className="modal-overlay" onClick={() => setPhoneModalOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setPhoneModalOpen(false)}><FaTimes /></button>
             <div className="modal-header"><FaPhone /> Enter Phone Number</div>
-            <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem'}}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
               Required for WhatsApp communication with hosts.
             </p>
             <div className="form-group">
               <label>WhatsApp Number</label>
-              <input type="tel" className="form-input" placeholder="+91 98765 43210" value={tempPhoneNumber} 
-                onChange={(e) => setTempPhoneNumber(e.target.value)} 
+              <input type="tel" className="form-input" placeholder="+91 98765 43210" value={tempPhoneNumber}
+                onChange={(e) => setTempPhoneNumber(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handlePhoneSubmit()} autoFocus />
             </div>
             <button className="btn-primary btn-block" onClick={handlePhoneSubmit} disabled={!tempPhoneNumber.trim()}>
@@ -1345,35 +1441,35 @@ function AppContent() {
         <div className="modal-overlay" onClick={() => setWhatsappModal({ open: false, link: null })}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setWhatsappModal({ open: false, link: null })}><FaTimes /></button>
-            <div style={{textAlign: 'center', padding: '1rem 0'}}>
-              <div style={{fontSize: '48px', marginBottom: '1rem'}}><FaCheckCircle style={{color: '#22c55e', fontSize: '48px'}} /></div>
-              <div className="modal-header" style={{justifyContent: 'center', marginBottom: '0.5rem'}}>Request Sent!</div>
-              <p style={{color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
+            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+              <div style={{ fontSize: '48px', marginBottom: '1rem' }}><FaCheckCircle style={{ color: '#22c55e', fontSize: '48px' }} /></div>
+              <div className="modal-header" style={{ justifyContent: 'center', marginBottom: '0.5rem' }}>Request Sent!</div>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
                 The host has been notified on the website and via email. They will approve or reject your request soon.
               </p>
-              <div style={{background: 'var(--bg-elevated)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem'}}>
-                <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem'}}>
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                   <strong>Want faster response?</strong>
                 </p>
-                <p style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                   You can also reach out directly on WhatsApp
                 </p>
               </div>
             </div>
-            <div style={{display: 'flex', gap: '0.75rem'}}>
-              <button 
-                className="btn-primary" 
-                style={{flex: 1}} 
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                className="btn-primary"
+                style={{ flex: 1 }}
                 onClick={() => setWhatsappModal({ open: false, link: null })}
               >
                 Done
               </button>
-              <button 
-                className="btn-secondary" 
-                style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}} 
+              <button
+                className="btn-secondary"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                 onClick={() => { openWhatsApp(whatsappModal.link); setWhatsappModal({ open: false, link: null }); }}
               >
-                <FaWhatsapp style={{color: '#25D366'}} /> WhatsApp
+                <FaWhatsapp style={{ color: '#25D366' }} /> WhatsApp
               </button>
             </div>
           </div>
@@ -1385,38 +1481,38 @@ function AppContent() {
         <div className="modal-overlay" onClick={closeApprovalModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={closeApprovalModal}><FaTimes /></button>
-            
+
             {/* Not yet processed - show confirmation */}
             {!approvalModal.result && (
               <>
                 <div className="modal-header">
                   Confirm {approvalModal.action === 'approve' ? 'Approval' : 'Rejection'}
                 </div>
-                <p style={{color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5'}}>
-                  {approvalModal.action === 'approve' 
+                <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  {approvalModal.action === 'approve'
                     ? 'Are you sure you want to approve this ride request? The passenger will be notified.'
                     : 'Are you sure you want to reject this ride request? The passenger will be notified.'}
                 </p>
-                <div style={{display: 'flex', gap: '0.75rem'}}>
-                  <button 
-                    className="btn-secondary" 
-                    style={{flex: 1}} 
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    className="btn-secondary"
+                    style={{ flex: 1 }}
                     onClick={closeApprovalModal}
                     disabled={approvalModal.processing}
                   >
                     Cancel
                   </button>
-                  <button 
-                    className="btn-primary" 
+                  <button
+                    className="btn-primary"
                     style={{
-                      flex: 1, 
+                      flex: 1,
                       background: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444'
-                    }} 
+                    }}
                     onClick={handleApprovalResponse}
                     disabled={approvalModal.processing}
                   >
-                    {approvalModal.processing 
-                      ? 'Processing...' 
+                    {approvalModal.processing
+                      ? 'Processing...'
                       : (approvalModal.action === 'approve' ? 'Yes, Approve' : 'Yes, Reject')}
                   </button>
                 </div>
@@ -1426,28 +1522,28 @@ function AppContent() {
             {/* Success result */}
             {approvalModal.result?.success && (
               <>
-                <div style={{textAlign: 'center', padding: '1rem'}}>
-                  <div style={{fontSize: '64px', marginBottom: '1rem'}}>
-                    {approvalModal.action === 'approve' ? <FaCheckCircle style={{color: '#22c55e'}} /> : <FaTimes style={{color: '#ef4444'}} />}
+                <div style={{ textAlign: 'center', padding: '1rem' }}>
+                  <div style={{ fontSize: '64px', marginBottom: '1rem' }}>
+                    {approvalModal.action === 'approve' ? <FaCheckCircle style={{ color: '#22c55e' }} /> : <FaTimes style={{ color: '#ef4444' }} />}
                   </div>
-                  <h2 style={{color: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444', marginBottom: '1rem'}}>
+                  <h2 style={{ color: approvalModal.action === 'approve' ? '#22c55e' : '#ef4444', marginBottom: '1rem' }}>
                     Request {approvalModal.action === 'approve' ? 'Approved!' : 'Rejected'}
                   </h2>
-                  <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
                     {approvalModal.result.message}
                   </p>
                   {approvalModal.result.passengerPhone && approvalModal.action === 'approve' && (
-                    <button 
-                      className="btn-primary" 
-                      style={{background: '#25D366', marginTop: '1rem'}} 
+                    <button
+                      className="btn-primary"
+                      style={{ background: '#25D366', marginTop: '1rem' }}
                       onClick={() => window.open(`https://wa.me/${approvalModal.result.passengerPhone.replace(/\D/g, '')}`, '_blank')}
                     >
                       <FaWhatsapp /> Message Passenger on WhatsApp
                     </button>
                   )}
-                  <button 
-                    className="btn-secondary" 
-                    style={{marginTop: '1rem', display: 'block', width: '100%'}} 
+                  <button
+                    className="btn-secondary"
+                    style={{ marginTop: '1rem', display: 'block', width: '100%' }}
                     onClick={closeApprovalModal}
                   >
                     Close
@@ -1459,18 +1555,18 @@ function AppContent() {
             {/* Error result */}
             {approvalModal.result && !approvalModal.result.success && (
               <>
-                <div style={{textAlign: 'center', padding: '1rem'}}>
-                  <div style={{fontSize: '64px', marginBottom: '1rem'}}>🚫</div>
-                  <h2 style={{color: '#ef4444', marginBottom: '1rem'}}>Unable to Process</h2>
-                  <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>
+                <div style={{ textAlign: 'center', padding: '1rem' }}>
+                  <div style={{ fontSize: '64px', marginBottom: '1rem' }}>🚫</div>
+                  <h2 style={{ color: '#ef4444', marginBottom: '1rem' }}>Unable to Process</h2>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
                     {approvalModal.result.error}
                   </p>
-                  <p style={{color: 'var(--text-muted)', fontSize: '0.85rem'}}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     Make sure you're logged in with the <strong>host account</strong> that posted the ride.
                   </p>
-                  <button 
-                    className="btn-secondary" 
-                    style={{marginTop: '1rem'}} 
+                  <button
+                    className="btn-secondary"
+                    style={{ marginTop: '1rem' }}
                     onClick={closeApprovalModal}
                   >
                     Close
